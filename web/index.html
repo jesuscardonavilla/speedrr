@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="2026-11-20.1">
+<meta name="build" content="2026-11-20.2">
 <title>Speed Reader Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -182,7 +182,7 @@ input,textarea{-webkit-user-select:text;user-select:text}.fixdot{width:14px;heig
 .rl{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);width:100%;white-space:pre}.rl .l{text-align:right}.rl .r{text-align:left}.rl .rc{color:#E0402A;font-weight:800}.fixdot.top{margin:0 0 6px;display:block}.fline{display:flex;align-items:center;justify-content:center;white-space:pre;max-width:100%}.fixdot.mid{margin:0 5px;display:inline-block;vertical-align:middle}.tx.hid{visibility:hidden}
 .fbox.pairs .fcont{align-items:stretch;width:100%}.prow{width:100%;box-sizing:border-box}.prow span{flex:none;min-width:30%;text-align:center}.pwrap{position:relative;width:100%}.fixdot.pabs{position:absolute;left:50%;top:50%;margin:-7px 0 0 -7px}.prow{padding:6px 12%;justify-content:space-between}
 .stage .w{display:flex;align-items:center;justify-content:center;white-space:pre;width:100%}
-.spd{display:flex;align-items:center;gap:12px;font-size:15px}.spd b{min-width:48px;text-align:center;font-size:18px}.dintro,.dres{display:flex;flex-direction:column;gap:12px;padding-top:24px}.dtxt{font-size:16px;line-height:1.5;margin:0}
+.spd{display:flex;align-items:center;gap:12px;font-size:15px}.spd b{min-width:48px;white-space:nowrap;text-align:center;font-size:18px}.dintro,.dres{display:flex;flex-direction:column;gap:12px;padding-top:24px}.dtxt{font-size:16px;line-height:1.5;margin:0}
 .dres .big{color:var(--accent)}.stars.big2{font-size:34px;text-align:center;letter-spacing:6px}
 .qq{font-family:var(--serif);font-size:21px;line-height:1.35;padding:16px 0 12px}
 .opts{display:flex;flex-direction:column;gap:8px}
@@ -1206,7 +1206,7 @@ $('dr-lv').onclick=function(e){var c=e.target.closest('.chip');if(!c)return;dCle
 function intro(){
   dClear();dStop();dr.spd=store.get('sp_'+dr.id,1);lvTitle();$('dr-back').dataset.go=dr.from||'s-hub';if(dr.node)$('dr-lv').style.display='none';else $('dr-lv').style.display='';var d=DT[dr.id],b=bestOf(dr.id);
   put('<div class="dintro"><p class="dtxt">'+esc(d.d[LANG])+'</p><p class="sub">'+(LANG==='en'?'About ':'Unos ')+Math.round(budgetOf(dr.id)/60*10)/10+' min</p>'+(b!=null?'<p class="sub">'+w('best')+': '+b+'%</p>':'')+(SPEEDY[dr.id]?'<div class="spd"><span>'+(LANG==='en'?'Speed':'Velocidad')+'</span><button class="chip" id="sp-m" aria-label="'+(LANG==='en'?'Slower':'Más lento')+'">−</button><b id="sp-v"></b><button class="chip" id="sp-p" aria-label="'+(LANG==='en'?'Faster':'Más rápido')+'">+</button></div><p class="sub">'+(LANG==='en'?'Higher is faster and harder. Pick a speed where you get about 80% right.':'Más alto es más rápido y difícil. Elija una velocidad en la que acierte cerca del 80%.')+'</p>':'')+'<div class="actions"><button class="btn solid" id="dr-go">'+w('start')+'</button></div></div>');
-  if(SPEEDY[dr.id]){var spv=function(){$('sp-v').textContent=dr.spd.toFixed(2).replace(/0$/,'')+'×';};spv();var ix=function(){return SPS.indexOf(dr.spd)<0?2:SPS.indexOf(dr.spd);};$('sp-m').onclick=function(){dr.spd=SPS[Math.max(0,ix()-1)];store.set('sp_'+dr.id,dr.spd);spv();};$('sp-p').onclick=function(){dr.spd=SPS[Math.min(SPS.length-1,ix()+1)];store.set('sp_'+dr.id,dr.spd);spv();};}
+  if(SPEEDY[dr.id]){var spv=function(){$('sp-v').textContent=dr.spd.toFixed(2).replace(/0$/,'').replace(/\.0$/,'')+'×'+(WPMB[dr.id]?' ≈ '+(Math.round(WPMB[dr.id][dr.lvl]*dr.spd/10)*10)+' wpm':'');};spv();var ix=function(){return SPS.indexOf(dr.spd)<0?2:SPS.indexOf(dr.spd);};$('sp-m').onclick=function(){dr.spd=SPS[Math.max(0,ix()-1)];store.set('sp_'+dr.id,dr.spd);spv();};$('sp-p').onclick=function(){dr.spd=SPS[Math.min(SPS.length-1,ix()+1)];store.set('sp_'+dr.id,dr.spd);spv();};}
   $('dr-go').onclick=function(){dr.ok=0;dr.total=0;dr.round=0;dr.t0=Date.now();dr.budget=budgetOf(dr.id)*1000;$('dr-lv').style.display='none';dTick();dr.iv=setInterval(dTick,500);RUN[dr.id](dr.lvl);};
 }
 function end(ok,total,note){
@@ -1268,7 +1268,8 @@ function mutate(s){ /* change one character */
 }
 function wpmMs(text,wpm){return text.split(/\s+/).length*60000/wpm;}
 var RUN={};
-var SPS=[.5,.75,1,1.25,1.5,2];
+var SPS=[.5,.75,1,1.25,1.5,2,2.5,3,4,5,6];
+var WPMB={bola:[200,300,400],vertical:[220,300,400],idea:[220,320,450],visualC2F3:[250,350,500],complete:[240,340,480]};
 var SPEEDY={bee:1,fijacR:1,fijacV:1,abajo:1,bola:1,vertical:1,idea:1,visualC2F3:1,ampli1:1,ampliC2F1:1,capte:1,visual1:1,visualC2F1:1,recono1:1,reconoC2F1:1,dif1:1,difC2F1:1,difer:1,mapam:1,horario:1,complete:1};
 function SPD(){return dr.spd||1;}
 var BUDS={ordene:120,quien:120,horario:150,deriva:150};
