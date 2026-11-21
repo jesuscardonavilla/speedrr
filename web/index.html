@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="2026-11-20.1">
+<title>Speed Reader Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Literata:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one phone-width column, bottom tabs (Drills, Read), every drill is a full screen with a back button. */
+:root{
+  --bg:#F6F3EC; --ink:#1D1B18; --muted:#5E584F; --card:#FFFFFF; --line:#E4DED2;
+  --sand:#ECE6D9; --accent:#B93A22; --tint:#F4D5C9; --green:#2F4A3F; --mint:#DDE9E2;
+  --night:#1D1B18; --night2:#2B2824; --coral:#FF7A5C; --nmuted:#A8A196;
+  --serif:Literata,Georgia,serif; --sans:Inter,system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+#s-flow button:focus-visible{outline-color:var(--coral)}
+#app{max-width:430px;height:100%;margin:0 auto;display:flex;flex-direction:column;background:var(--bg)}
+main{flex:1;min-height:0;position:relative}
+.screen{display:none;height:100%;overflow-y:auto;padding:0 20px 24px}
+.screen.active{display:flex;flex-direction:column}
+h1{margin:0;font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:-.5px}
+.sub{color:var(--muted);font-size:13px}
+.label{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+
+.bar{display:flex;align-items:center;justify-content:space-between;padding:16px 0 4px;margin:0 -8px}
+.bar .ttl{text-align:center;display:flex;flex-direction:column}
+.bar .ttl b{font-size:15px;font-weight:600}
+.bar .ttl span{font-size:13px;color:var(--muted)}
+.bar .sp{width:44px;height:44px}
+.back{width:44px;height:44px;border:none;background:transparent;border-radius:22px;display:flex;align-items:center;justify-content:center}
+#s-flow .ttl span{color:var(--nmuted)}
+
+.home-head{display:flex;align-items:center;justify-content:space-between;padding:28px 0 8px}
+.pill{height:34px;padding:0 14px;border-radius:17px;background:var(--sand);color:#3D3830;font-size:13px;font-weight:600;display:flex;align-items:center}
+.session{margin-top:12px;padding:20px;border-radius:24px;background:var(--night);color:#F6F3EC;display:flex;flex-direction:column;gap:6px}
+.session .label{color:var(--nmuted)}
+.session h2{margin:0;font-family:var(--serif);font-size:24px;font-weight:600}
+.session p{margin:0;font-size:14px;color:#D8D2C6}
+.session .go{margin-top:10px;align-self:flex-end;height:48px;padding:0 28px;border:none;border-radius:24px;background:var(--coral);color:var(--night);font-size:15px;font-weight:600}
+.list{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:14px;padding:10px 0;border:none;border-bottom:1px solid var(--line);background:transparent;text-align:left;width:100%}
+.row:last-child{border-bottom:none}
+.row .ic{width:44px;height:44px;flex:none;border-radius:12px;background:var(--sand);color:#3D3830;display:flex;align-items:center;justify-content:center}
+.row .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.row .tx b{font-size:15px;font-weight:600}
+.row .tx span{font-size:13px;color:var(--muted)}
+.row .tm{font-size:13px;color:var(--muted)}
+
+nav#tabs{height:64px;flex:none;border-top:1px solid var(--line);display:flex;background:var(--bg)}
+.tab{flex:1;border:none;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:500}
+.tab[aria-current="page"]{color:var(--ink);font-weight:600}
+
+.btn{height:52px;padding:0 22px;border-radius:26px;border:1px solid var(--ink);background:transparent;font-size:15px;font-weight:600}
+.btn.solid{background:var(--ink);color:#F6F3EC}
+.btn.red{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.coral{background:var(--coral);border-color:var(--coral);color:var(--night)}
+.actions{display:flex;gap:10px;margin-top:auto;padding-top:16px}
+.actions .btn{flex:1}
+.hint{font-size:14px;line-height:1.5;color:#4A443B;text-align:center;margin:14px 8px 0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{min-width:44px;height:44px;padding:0 14px;border-radius:12px;border:1px solid #C9C2B4;background:transparent;font-size:15px;font-weight:500}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--tint);font-weight:600}
+.night .chip{border-color:#5A544A}
+.night .chip[aria-pressed="true"]{border-color:var(--coral);background:transparent;color:var(--coral)}
+
+/* warm-up */
+.arena{position:relative;height:300px;margin-top:16px;border-radius:24px;background:var(--night);overflow:hidden}
+.dot{position:absolute;width:26px;height:26px;border-radius:50%;background:var(--coral);transform:translate(-50%,-50%);left:50%;top:50%}
+.arena .phase{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:13px;color:var(--nmuted)}
+
+/* schulte */
+.stats{display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px}
+.big{font-family:var(--serif);font-size:52px;font-weight:600;line-height:1}
+.time{font-size:30px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.gridwrap{margin-top:14px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:20px}
+#sc-grid{display:grid;gap:6px}
+.cell{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:24px;font-weight:600;padding:0;font-variant-numeric:tabular-nums}
+#sc-grid[data-size="3"] .cell{font-size:34px}
+#sc-grid[data-size="4"] .cell{font-size:28px}
+.cell.mid{border:2px solid var(--accent)}
+.cell.found{background:var(--mint);border-color:var(--mint);color:var(--green);font-weight:500}
+.cell.bad{background:var(--tint);border-color:var(--accent)}
+
+/* flash */
+.stage{position:relative;height:210px;margin-top:16px;border-radius:24px;background:var(--night);display:flex;align-items:center;justify-content:center;padding:0 16px;text-align:center}
+.stage .tk{position:absolute;left:50%;width:1px;height:34px;background:var(--coral)}
+.stage .t1{top:0}.stage .t2{bottom:0}
+.stage .w{font-family:var(--serif);font-size:34px;font-weight:500;color:#F6F3EC;line-height:1.2}
+.stage .msg{position:absolute;bottom:42px;left:0;right:0;font-size:14px;color:var(--nmuted)}
+.opts{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.opt{height:56px;border-radius:16px;border:1px solid #C9C2B4;background:var(--card);font-family:var(--serif);font-size:18px;font-weight:500}
+.opt.ok{background:var(--mint);border-color:var(--green)}
+.opt.no{background:var(--tint);border-color:var(--accent)}
+.setrow{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.set{flex:1;min-width:150px;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 6px 0 16px;border-radius:26px;background:var(--sand);font-size:14px;font-weight:600}
+.set .b{width:44px;height:44px;border-radius:22px;border:none;background:transparent;font-size:20px}
+
+/* controls */
+.ctl{margin:12px -20px -24px;background:var(--card);border-top:1px solid var(--line);border-radius:28px 28px 0 0;padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px}
+.ctl-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ctl .lbl{font-size:14px;font-weight:600}
+.stepper{display:flex;align-items:center;gap:10px}
+.rbtn{width:44px;height:44px;border-radius:22px;border:1px solid #8A8378;background:transparent;font-size:20px;display:flex;align-items:center;justify-content:center}
+.val{min-width:84px;text-align:center;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.val small{font-size:13px;font-weight:500;color:var(--muted)}
+.ctl-play{display:flex;align-items:center;justify-content:center;gap:28px}
+.ibtn{width:52px;height:52px;border:none;background:transparent;border-radius:26px;display:flex;align-items:center;justify-content:center}
+.play{width:72px;height:72px;border:none;border-radius:36px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}
+.night .ctl{background:var(--night2);border-color:var(--night2)}
+.night .rbtn{border-color:#5A544A}
+.night .val small{color:var(--nmuted)}
+.night .play{background:var(--coral);color:var(--night)}
+.night .ibtn{color:#F6F3EC}
+
+/* flow */
+#s-flow{background:var(--night);color:#F6F3EC}
+.rsvp{position:relative;height:150px;border-top:1px solid #3D3830;border-bottom:1px solid #3D3830;display:flex;align-items:center;overflow:hidden}
+.rsvp .tk{position:absolute;left:50%;width:1px;height:26px;background:var(--coral)}
+.rsvp .t1{top:0}.rsvp .t2{bottom:0}
+.rsvp .word{width:100%;display:flex;align-items:baseline;font-family:var(--serif);font-weight:500;line-height:1;font-size:46px;white-space:pre}
+.rsvp .word .b{flex:1 1 0;text-align:right;min-width:0}
+.rsvp .word .a{flex:1 1 0;text-align:left;min-width:0}
+.rsvp .word .p{color:var(--coral)}
+.ctx{margin:22px 10px 0;font-family:var(--serif);font-size:15px;line-height:1.6;color:var(--nmuted);text-align:center;min-height:72px}
+.ctx b{color:var(--coral);font-weight:600}
+.prog{height:4px;border-radius:2px;background:#3D3830;margin-top:10px}
+.prog i{display:block;height:4px;border-radius:2px;background:#F6F3EC;width:0}
+.pl{margin-top:6px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between}
+#s-flow .pl{color:var(--nmuted)}
+
+/* guided + column */
+.page{flex:1;min-height:200px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden auto;padding:20px 20px 12px}
+#g-text{display:flex;flex-wrap:wrap;align-content:flex-start;font-family:var(--serif);font-size:17px;line-height:1.7}
+#g-text .w{display:block;padding:1px .14em;color:var(--ink)}
+.w.read{color:#6B655C}
+.w.cur{background:var(--tint);font-weight:500}
+.w.first{border-radius:6px 0 0 6px}.w.last{border-radius:0 6px 6px 0}.w.solo{border-radius:6px}
+.pbr{flex-basis:100%;height:14px}
+.colbox{position:relative;flex:1;min-height:200px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;padding:14px 0}
+.colbox::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--accent);opacity:.35}
+#c-text .w{display:block;text-align:center;font-family:var(--serif);font-size:20px;line-height:1.5;padding:4px 0;color:var(--ink);position:relative}
+#c-text .w.cur{background:var(--tint);border-radius:0}
+.pbar{height:4px;border-radius:2px;background:var(--line);margin-top:10px}
+.pbar i{display:block;height:4px;border-radius:2px;background:var(--green);width:0}
+
+/* read */
+.card{margin-top:12px;padding:16px;background:var(--card);border:1px solid var(--line);border-radius:20px;display:flex;flex-direction:column;gap:8px}
+.drop{margin-top:12px;padding:16px;border:1.5px dashed #8A8378;border-radius:16px;display:flex;flex-direction:column;gap:10px}
+.drop textarea{width:100%;min-height:90px;border:1px solid #C9C2B4;border-radius:12px;padding:10px;font:inherit;font-size:14px;background:var(--card);color:var(--ink);resize:vertical}
+.filebtn{position:relative;display:inline-flex;align-items:center;justify-content:center;height:48px;border-radius:24px;border:1px solid var(--ink);font-weight:600;font-size:15px;cursor:pointer}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns .btn{height:48px;flex:1;min-width:120px;padding:0 14px}
+#read-msg{font-size:14px;color:var(--muted);min-height:20px}
+
+/* test */
+.passage{margin-top:14px;padding:20px;background:var(--card);border:1px solid var(--line);border-radius:20px;font-family:var(--serif);font-size:18px;line-height:1.7;white-space:pre-line}
+.q{margin-top:14px;border:none;padding:0}
+.q legend{font-size:16px;font-weight:600;margin-bottom:8px}
+.q label{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;border:1px solid #C9C2B4;border-radius:14px;background:var(--card);margin-bottom:8px;font-size:15px}
+.q input{width:20px;height:20px;accent-color:var(--accent)}
+.q label:has(input:checked){border-color:var(--accent);background:var(--tint)}
+.result{margin-top:16px;padding:20px;border-radius:24px;background:var(--night);color:#F6F3EC}
+.result .big{color:var(--coral)}
+.result p{margin:8px 0 0;font-size:14px;color:#D8D2C6;line-height:1.5}
+.sec{display:none}.sec.on{display:block}
+.note{font-size:13px;color:var(--muted);line-height:1.5;margin-top:10px}
+
+.langs{display:flex;gap:6px}.langs .chip{min-width:44px;height:34px;padding:0 10px;font-size:13px}
+input,textarea{-webkit-user-select:text;user-select:text}.fixdot{width:14px;height:14px;border-radius:50%;background:#E0402A;box-shadow:0 0 0 4px rgba(224,64,42,.18);margin-bottom:14px;flex:none}
+.fcont{display:flex;flex-direction:column;align-items:center;min-width:0;max-width:100%}.fcont.hid{visibility:hidden}
+.fbox.pairs{justify-content:flex-start;padding-top:8px}.fbox.pairs .fcont{width:100%}
+.stage .fixd{position:absolute;left:50%;top:calc(50% - 44px);width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#FF7A5C;box-shadow:0 0 0 4px rgba(255,122,92,.25)}
+.rl{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);width:100%;white-space:pre}.rl .l{text-align:right}.rl .r{text-align:left}.rl .rc{color:#E0402A;font-weight:800}.fixdot.top{margin:0 0 6px;display:block}.fline{display:flex;align-items:center;justify-content:center;white-space:pre;max-width:100%}.fixdot.mid{margin:0 5px;display:inline-block;vertical-align:middle}.tx.hid{visibility:hidden}
+.fbox.pairs .fcont{align-items:stretch;width:100%}.prow{width:100%;box-sizing:border-box}.prow span{flex:none;min-width:30%;text-align:center}.pwrap{position:relative;width:100%}.fixdot.pabs{position:absolute;left:50%;top:50%;margin:-7px 0 0 -7px}.prow{padding:6px 12%;justify-content:space-between}
+.stage .w{display:flex;align-items:center;justify-content:center;white-space:pre;width:100%}
+.spd{display:flex;align-items:center;gap:12px;font-size:15px}.spd b{min-width:48px;text-align:center;font-size:18px}.dintro,.dres{display:flex;flex-direction:column;gap:12px;padding-top:24px}.dtxt{font-size:16px;line-height:1.5;margin:0}
+.dres .big{color:var(--accent)}.stars.big2{font-size:34px;text-align:center;letter-spacing:6px}
+.qq{font-family:var(--serif);font-size:21px;line-height:1.35;padding:16px 0 12px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{min-height:52px;padding:10px 16px;border-radius:14px;border:1px solid #C9C2B4;background:transparent;text-align:left;font-size:16px}
+.opt.good{border-color:#2F7D4F;background:#E3F1E8}.opt.bad{border-color:var(--accent);background:var(--tint)}
+.fbox{min-height:min(52vh,420px);display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;text-align:center}
+.fbox .dim{font-size:40px;color:var(--muted)}.fw{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1.4}.fw.num{font-size:40px;letter-spacing:4px}
+.fbox.pairs{align-items:stretch}.prow{display:flex;justify-content:space-around;font-size:19px;padding:6px 0;border-bottom:1px solid var(--line)}
+.arena2{position:relative;height:340px;margin:16px 0;border-radius:24px;background:var(--sand);overflow:hidden}
+.bee{position:absolute;width:40px;height:40px;border-radius:50%;background:var(--coral);color:var(--night);font-weight:700;display:flex;align-items:center;justify-content:center;left:50%;top:50%;transition:left .25s,top .25s}
+.fxg{display:grid;gap:14px 0;margin:20px 0;padding:18px 0;border-radius:24px;background:var(--sand);justify-items:center}
+.fx{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)}
+.fx.on{background:var(--coral);color:var(--night);font-weight:700}
+.wd{font-size:24px;font-family:var(--serif);position:absolute;left:0;right:0;top:50%;transition:transform .2s}.fbox .line{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.pacer{font-family:var(--serif);font-size:20px;line-height:1.7;padding:16px 0}.pacer .pw{padding:1px 2px;border-radius:4px}.pacer .pw.cur{background:var(--tint);box-shadow:0 0 0 2px var(--tint)}
+.pacer.narrow{max-width:150px;margin:0 auto;text-align:center}.pacer .pl{display:block}
+.slit{min-height:240px;display:flex;align-items:center;justify-content:center;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);margin:40px 0}.slt{font-family:var(--serif);font-size:22px;text-align:center}
+.ptxt{font-family:var(--serif);font-size:19px;line-height:1.6;padding:16px 0}.ptxt.sm{font-size:16px;padding:8px 0;color:#3D3830}
+.bar-t{height:6px;border-radius:3px;background:var(--sand);overflow:hidden;margin:6px 0 14px}.bar-t i{display:block;height:100%;width:0;background:var(--accent)}
+.dtop{font-size:15px;font-weight:600;text-align:right;padding-top:12px}.drows{display:flex;flex-direction:column;gap:6px}
+.drow{display:flex;justify-content:space-around;padding:12px 8px;border-radius:12px;border:1px solid var(--line);background:transparent;font-size:17px}.drow.sel{border-color:var(--accent);background:var(--tint)}
+.tgt{padding:16px 0 8px;font-size:15px;color:var(--muted)}.tgt b{font-family:var(--serif);font-size:28px;color:var(--ink)}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.sc{min-height:44px;border-radius:10px;border:1px solid var(--line);background:transparent;font-size:14px}.sc.good{background:#E3F1E8}.sc.bad{background:var(--tint)}
+.bank{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}.chp{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid #C9C2B4;background:transparent;font-size:15px}.chp.on{border-color:var(--accent);background:var(--tint)}.chp.bad{background:var(--tint);border-color:var(--accent)}
+.groups{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grp{min-height:90px;border-radius:16px;border:1px dashed #C9C2B4;background:transparent;padding:10px;text-align:left;display:flex;flex-direction:column;gap:6px}.grp .gl{display:flex;flex-wrap:wrap;gap:4px}.grp i{font-style:normal;font-size:13px;background:var(--sand);border-radius:10px;padding:2px 8px}
+.ordl{display:flex;flex-direction:column;gap:6px}.os{min-height:48px;padding:10px 14px;border-radius:12px;border:1px solid #C9C2B4;background:transparent;text-align:left;font-size:15px}.os.bad{background:var(--tint)}.ordd{padding-top:14px;font-size:14px;color:#3D3830;display:flex;flex-direction:column;gap:4px}
+mark{background:var(--tint);padding:0 3px;border-radius:4px}
+.ta,.ti{width:100%;box-sizing:border-box;border-radius:14px;border:1px solid #C9C2B4;background:transparent;padding:12px;font:inherit;font-size:16px;min-height:44px}.ta{min-height:120px}
+.fb{min-height:22px;font-size:15px;color:#3D3830}
+.sched{display:flex;flex-direction:column;gap:6px;padding:16px 0}.srow{display:flex;gap:16px;padding:10px 14px;border-radius:12px;background:var(--sand)}.srow b{width:56px}
+
+.pstats{display:flex;gap:18px;padding:22px 0 8px;font-size:14px;color:var(--muted)}.pstats b{color:var(--ink);font-size:16px}.stat{display:flex;align-items:center;gap:6px}
+.ubanner{margin:18px 0 8px;padding:16px 18px;border-radius:20px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ubanner .ul{font-size:12px;font-weight:700;letter-spacing:1.2px;opacity:.85}.ubanner .ut{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1.2}.ubanner .ud{font-size:13px;opacity:.9;margin-top:2px}.ubanner .uc{font-weight:700;font-size:14px;background:rgba(255,255,255,.2);border-radius:14px;padding:6px 10px;white-space:nowrap}
+.upath{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0 10px}
+.pnw{display:flex;flex-direction:column;align-items:center;position:relative;min-height:96px}
+.pn{width:68px;height:68px;border-radius:50%;border:none;background:var(--uc);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 rgba(0,0,0,.22);transition:transform .1s}
+.pn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.22)}
+.pn.done{background:#F2B100;color:#5a3d00}.pn.lock{background:#D9D3C6;color:#8d8678;box-shadow:0 6px 0 #BDB6A6}
+.pn.cur{animation:pbounce 1.4s ease-in-out infinite}.pn.shake{animation:pshake .35s}
+@keyframes pbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}@keyframes pshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.pn.cur{animation:none}}
+.pbub{position:absolute;top:-30px;background:#fff;border:2px solid var(--line);border-radius:12px;padding:3px 12px;font-size:13px;font-weight:800;letter-spacing:.8px}
+.pnl{margin-top:10px;font-size:12px;color:var(--muted);max-width:150px;text-align:center}.stars{color:#F2B100;font-size:16px;letter-spacing:2px}.stars i{font-style:normal;color:#D9D3C6}
+.pfoot{padding:20px 0;display:flex;justify-content:center}
+
+.pl-hero{padding:28px 0 8px}.pl-hero h1{margin:4px 0 10px}.pl-why{padding-left:20px;line-height:1.5;font-size:15px;margin:8px 0 16px}.pl-why li{margin-bottom:6px}
+.pl-head{display:flex;justify-content:space-between;align-items:flex-start;padding:24px 0 10px}.pl-day{font-family:var(--serif);font-size:30px;font-weight:600}
+.cal{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:6px 0}.cd{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:transparent;font-size:15px;font-weight:600;position:relative;min-height:44px}
+.cd.ok{background:#2F7D4F;border-color:#2F7D4F;color:#fff}.cd.now{border:2px solid var(--accent);color:var(--accent)}.cd.miss{background:var(--sand)}.cd.part{background:#F4DDB0}.cd.fut{color:var(--muted)}.cd.sel{outline:2px solid var(--ink);outline-offset:1px}.cd.bm::after{content:'◆';position:absolute;top:2px;right:4px;font-size:9px;opacity:.7}
+.pl-card{margin:14px 0;padding:16px;border-radius:20px;background:var(--card);border:1px solid var(--line)}.pl-ct{display:flex;justify-content:space-between;font-size:16px;padding-bottom:6px}.pl-ct span{color:var(--muted);font-size:13px}
+.pl-t{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}.pl-tb{flex:1;display:flex;align-items:center;gap:12px;padding:12px 0;border:none;background:transparent;text-align:left;min-height:56px}.pl-t.lk{opacity:.5}
+.pl-tb .tx{flex:1;min-width:0;display:flex;flex-direction:column}.pl-tb .tx b{font-size:15px}.pl-tb .tx span{font-size:13px;color:var(--muted)}.pl-tb .tm{font-size:13px;color:var(--muted)}
+.pl-chk{width:28px;height:28px;border-radius:50%;border:2px solid #C9C2B4;display:flex;align-items:center;justify-content:center;flex:none;color:#fff;font-size:15px}.pl-t.dn .pl-chk{background:#2F7D4F;border-color:#2F7D4F}
+</style>
+</head>
+<body>
+<div id="app">
+<main>
+
+<!-- HOME -->
+<section id="s-plan" class="screen active" aria-label="Plan"><div id="pl-body"></div></section>
+<section id="s-path" class="screen" aria-label="Path"><div id="p-body"></div></section>
+<section id="s-hub" class="screen" aria-label="Drills">
+  <div class="home-head">
+    <h1>Drills</h1>
+    <div class="langs" role="group" aria-label="Language"><button class="chip" id="lang-en" aria-pressed="true">EN</button><button class="chip" id="lang-es" aria-pressed="false">ES</button></div><div class="pill" id="hub-pill">Speed test: none yet</div>
+  </div>
+  <div class="session">
+    <div class="label">Today's warm-up</div>
+    <h2>5-minute session</h2>
+    <p>Eye warm-up, Schulte table, Word flash</p>
+    <button class="go" data-go="s-warm">Start</button>
+  </div>
+  <div id="hub-list"></div>
+</section>
+
+<!-- EYE WARM-UP -->
+<section id="s-drill" class="screen" aria-label="Drill"><header class="bar"><button class="back" id="dr-back" data-go="s-hub" aria-label="Back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b id="dr-title"></b><span id="dr-sub"></span></div><div class="sp" id="dr-time" style="font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center"></div></header><div class="chips" id="dr-lv" style="padding:8px 0"></div><div id="dr-body"></div></section>
+<section id="s-warm" class="screen" aria-label="Eye warm-up">
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Eye warm-up</b><span>2 min: follow, then jump</span></div><div class="sp"></div></header>
+  <div class="arena" id="wu-arena"><div class="dot" id="wu-dot"></div><div class="phase" id="wu-phase">Press Start, keep your head still</div></div>
+  <p class="hint">Three rounds of 40 seconds. Each round the dot glides on a new path and you follow it smoothly, then it jumps between targets and your eyes jump with it. Total 2 minutes.</p>
+  <div class="actions"><button class="btn solid" id="wu-btn">Start</button></div>
+</section>
+
+<!-- SCHULTE -->
+<section id="s-schulte" class="screen" aria-label="Schulte table">
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Schulte table</b><span id="sc-best">No best yet</span></div><div class="sp"></div></header>
+  <div class="chips" id="sc-sizes" style="justify-content:center;margin-top:6px">
+    <button class="chip" data-v="3" aria-pressed="false">3×3</button>
+    <button class="chip" data-v="4" aria-pressed="false">4×4</button>
+    <button class="chip" data-v="5" aria-pressed="true">5×5</button>
+  </div>
+  <div class="stats">
+    <div><div class="sub">Find</div><div class="big" id="sc-next">1</div></div>
+    <div style="text-align:right"><div class="sub">Seconds</div><div class="time" id="sc-time">0.0</div></div>
+  </div>
+  <div class="gridwrap"><div id="sc-grid"></div></div>
+  <p class="hint" id="sc-hint">Keep your eyes on the red-outlined center cell. Tap the numbers in order using only your side vision.</p>
+  <p class="hint" id="sc-msg" role="status" style="font-weight:600;color:var(--green)"></p>
+  <div class="actions"><button class="btn" data-go="s-hub">End drill</button><button class="btn solid" id="sc-again">New table</button></div>
+</section>
+
+<!-- WORD FLASH -->
+<section id="s-flash" class="screen" aria-label="Word flash">
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Word flash</b><span id="fl-prog">10 rounds</span></div><div class="sp"></div></header>
+  <div class="stage" id="fl-stage"><div class="tk t1"></div><div class="tk t2"></div><div class="w" id="fl-word"></div><div class="msg" id="fl-hint" aria-live="polite">Press Start. A phrase flashes at the center.</div></div>
+  <div class="opts" id="fl-opts"></div>
+  <div class="setrow">
+    <div class="set"><span id="fl-ms">300 ms</span><span><button class="b" id="fl-msm" aria-label="Flash longer">−</button><button class="b" id="fl-msp" aria-label="Flash shorter">+</button></span></div>
+    <div class="set"><span id="fl-n">3 words</span><span><button class="b" id="fl-nm" aria-label="Fewer words">−</button><button class="b" id="fl-np" aria-label="More words">+</button></span></div>
+  </div>
+  <div class="actions"><button class="btn red" id="fl-start">Start</button></div>
+</section>
+
+<!-- WORD FLOW -->
+<section id="s-flow" class="screen night" aria-label="Word flow">
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Word flow</b><span id="rs-title"></span></div><div class="sp"></div></header>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0">
+    <div class="rsvp" aria-live="off"><div class="tk t1"></div><div class="tk t2"></div><div class="word" id="rs-word"><span class="b" id="rs-b"></span><span class="p" id="rs-p"></span><span class="a" id="rs-a"></span></div></div>
+    <div class="ctx" id="rs-ctx"></div>
+  </div>
+  <div class="prog"><i id="rs-bar"></i></div>
+  <div class="pl"><span id="rs-pct">0%</span><span>Eyes stay on the red letter</span></div>
+  <div class="ctl" id="rs-ctl"></div>
+</section>
+
+<!-- COLUMN DRILL -->
+<section id="s-col" class="screen" aria-label="Column drill">
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Column drill</b><span id="c-title"></span></div><div class="sp"></div></header>
+  <div class="colbox"><div id="c-text"></div></div>
+  <p class="hint" style="margin-top:8px">Aim your eyes at the red line. Take in each whole line with one stop.</p>
+  <div id="c-ctl"></div>
+</section>
+
+<!-- SPEED TEST -->
+<section id="s-test" class="screen" aria-label="Speed test">
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Speed test</b><span>Read once, then answer 3 questions</span></div><div class="sp"></div></header>
+  <div class="sec on" id="t-intro">
+    <p class="hint" style="text-align:left;margin:16px 0 0">You will read a short passage at your normal pace. Press Done as soon as you finish. Then three questions check what you took in, so speed only counts if you understood.</p>
+    <div class="actions" style="margin-top:20px"><button class="btn red" id="t-start">Start reading</button></div>
+  </div>
+  <div class="sec" id="t-read">
+    <div class="passage" id="t-passage"></div>
+    <div class="actions"><button class="btn solid" id="t-done">Done reading</button></div>
+  </div>
+  <div class="sec" id="t-quiz">
+    <div id="t-qs"></div>
+    <div class="actions"><button class="btn solid" id="t-submit" disabled>See result</button></div>
+  </div>
+  <div class="sec" id="t-res">
+    <div class="result"><div class="label" style="color:var(--nmuted)">Your effective speed</div><div class="big" id="t-eff">0</div><div style="font-size:14px;color:#D8D2C6">words per minute, counting only what you understood</div><p id="t-detail"></p></div>
+    <p class="note">Most adults read roughly 240 to 260 words per minute with full understanding. Speed gains that cost comprehension do not count here.</p>
+    <div class="actions"><button class="btn" data-go="s-hub">Done</button><button class="btn solid" id="t-again">Test again</button></div>
+  </div>
+</section>
+
+<!-- READ (library) -->
+<section id="s-read" class="screen" aria-label="Read">
+  <div class="home-head"><h1>Read</h1></div>
+  <div class="drop">
+    <div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Add your own book</b><span class="sub">EPUB or plain text file. PDF import is not in this test.</span></div>
+    <label class="filebtn" for="file">Choose a file<input type="file" id="file" accept=".epub,.txt,text/plain,application/epub+zip"></label>
+    <textarea id="paste" aria-label="Or paste text" placeholder="Or paste any text here"></textarea>
+    <button class="btn" id="paste-use" style="height:44px">Use pasted text</button>
+    <div id="read-msg" role="status"></div>
+  </div>
+  <div class="label" style="padding:20px 0 0">Current book</div>
+  <div class="card">
+    <div style="font-family:var(--serif);font-size:20px;font-weight:600;line-height:1.2" id="bk-title"></div>
+    <div class="sub" id="bk-meta"></div>
+    <div class="pbar"><i id="bk-bar"></i></div>
+    <div class="btns" style="margin-top:8px">
+      <button class="btn red" data-go="s-guided">Guided reading</button>
+      <button class="btn" data-go="s-flow">Word flow</button>
+      <button class="btn" data-go="s-col">Column drill</button>
+    </div>
+    <button class="btn" id="bk-restart" style="height:44px;margin-top:2px">Start from the beginning</button>
+  </div>
+</section>
+
+<!-- GUIDED READING -->
+<section id="s-guided" class="screen" aria-label="Guided reading">
+  <header class="bar"><button class="back" data-go="s-read" aria-label="Back to Read"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b id="g-title"></b><span>Guided reading</span></div><div class="sp"></div></header>
+  <div class="page"><div id="g-text"></div></div>
+  <div class="pbar"><i id="g-bar"></i></div>
+  <div id="g-ctl"></div>
+</section>
+
+</main>
+<nav id="tabs" aria-label="Main">
+  <button class="tab" data-go="s-plan" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Plan</button>
+  <button class="tab" data-go="s-path" aria-current="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="12" r="2.5"/><circle cx="8" cy="6" r="2.5"/><path d="M8.5 8.3l7 2.3M15.5 14l-6 2.2"/></svg>Path</button>
+  <button class="tab" data-go="s-hub" aria-current="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Drills</button>
+  <button class="tab" data-go="s-read" aria-current="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h13a1 1 0 0 1 1 1v13H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/></svg>Read</button>
+</nav>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var clamp=function(v,a,b){return Math.max(a,Math.min(b,v));};
+var rand=function(n){return Math.floor(Math.random()*n);};
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=rand(i+1);var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+var ICON_PLAY='<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+var ICON_PAUSE='<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+var ICON_REPLAY='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg>';
+var ICON_BACK='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></svg>';
+var ICON_FWD='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 6l6 6-6 6M5 6l6 6-6 6"/></svg>';
+
+/* ---------- texts ---------- */
+var SAMPLE='It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.\n\nHowever little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.\n\n"My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?"\n\nMr. Bennet replied that he had not.\n\n"But it is," returned she; "for Mrs. Long has just been here, and she told me all about it."\n\nMr. Bennet made no answer.\n\n"Do you not want to know who has taken it?" cried his wife impatiently.\n\n"You want to tell me, and I have no objection to hearing it."\n\nThis was invitation enough.\n\n"Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week."\n\n"What is his name?"\n\n"Bingley."\n\n"Is he married or single?"\n\n"Oh! Single, my dear, to be sure! A single man of large fortune; four or five thousand a year. What a fine thing for our girls!"\n\n"How so? How can it affect them?"\n\n"My dear Mr. Bennet," replied his wife, "how can you be so tiresome! You must know that I am thinking of his marrying one of them."\n\n"Is that his design in settling here?"\n\n"Design! Nonsense, how can you talk so! But it is very likely that he may fall in love with one of them, and therefore you must visit him as soon as he comes."';
+var TEST_TEXT='Call me Ishmael. Some years ago, never mind how long precisely, having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. Whenever I find myself growing grim about the mouth; whenever it is a damp, drizzly November in my soul; whenever I find myself involuntarily pausing before coffin warehouses, and bringing up the rear of every funeral I meet; then, I account it high time to get to sea as soon as I can. This is my substitute for pistol and ball. With a philosophical flourish Cato throws himself upon his sword; I quietly take to the ship. There is nothing surprising in this. If they but knew it, almost all men in their degree, some time or other, cherish very nearly the same feelings towards the ocean with me.';
+var TEST_Q=[
+ {q:'What does the narrator do to drive off the spleen?',o:['Takes to the sea','Takes long walks','Visits a doctor','Joins a funeral'],a:0},
+ {q:'Which month does he say feels damp and drizzly?',o:['January','November','March','August'],a:1},
+ {q:'Who throws himself upon his sword?',o:['Caesar','Ishmael','Cato','Plato'],a:2}
+];
+
+/* ---------- book ---------- */
+var book={title:'',words:[],key:'',pos:0};
+function tokenize(text){
+  var out=[];
+  text.split(/\n\s*\n/).forEach(function(p){
+    var ws=p.split(/\s+/).filter(Boolean);
+    ws.forEach(function(t,i){out.push({t:t,br:i===0&&out.length>0});});
+  });
+  return out;
+}
+function setPos(i){book.pos=i;store.set(book.key,i);}
+function setBook(title,text){
+  book.title=title;
+  book.words=tokenize(text);
+  book.key='pos:'+title+':'+book.words.length;
+  book.pos=clamp(store.get(book.key,0),0,Math.max(0,book.words.length-1));
+  renderBook();
+}
+function renderBook(){
+  $('bk-title').textContent=book.title;
+  var n=book.words.length;
+  $('bk-meta').textContent=n.toLocaleString()+' words, about '+Math.max(1,Math.round(n/250))+' min at a normal pace';
+  $('bk-bar').style.width=(n>1?Math.round(100*book.pos/(n-1)):0)+'%';
+  $('g-title').textContent=book.title;
+  $('rs-title').textContent=book.title;
+  $('c-title').textContent=book.title;
+}
+
+/* ---------- navigation ---------- */
+var screens=['s-hub','s-warm','s-schulte','s-flash','s-flow','s-col','s-test','s-read','s-guided','s-drill','s-path','s-plan'];
+var current='s-plan';
+var enter={},leave={};
+function show(id){
+  if(leave[current])leave[current]();
+  current=id;
+  screens.forEach(function(s){$(s).classList.toggle('active',s===id);});
+  $('tabs').style.display=(id==='s-hub'||id==='s-read'||id==='s-path'||id==='s-plan')?'flex':'none';
+  document.querySelectorAll('.tab').forEach(function(t){t.setAttribute('aria-current',t.dataset.go===id?'page':'false');});
+  $(id).scrollTop=0;
+  if(enter[id])enter[id]();
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-go]');
+  if(b&&!b.disabled)show(b.dataset.go);
+});
+
+/* ---------- eye warm-up ---------- */
+var wu={raf:0,t0:0,running:false};
+var TARGETS=[[.12,.2],[.88,.2],[.88,.78],[.12,.78],[.5,.5],[.12,.5],[.88,.5]];
+function wuStop(msg){
+  cancelAnimationFrame(wu.raf);wu.running=false;
+  $('wu-btn').textContent='Start';
+  $('wu-phase').textContent=msg||'Press Start, keep your head still';
+  var d=$('wu-dot');d.style.left='50%';d.style.top='50%';
+}
+function wuLoop(now){
+  if(!wu.running)return;
+  var t=now-wu.t0,x,y,d=$('wu-dot'),cyc=Math.floor(t/40000),w2=t%40000;
+  if(t>=120000){wuStop('Warm-up done. Your eyes are ready.');return;}
+  if(w2<20000){
+    var u=w2/1000*2*Math.PI/5;
+    if(cyc===0){x=.5+.4*Math.sin(u);y=.5+.28*Math.sin(2*u);}
+    else if(cyc===1){x=.5+.4*Math.sin(u);y=.5;}
+    else{x=.5;y=.5+.38*Math.sin(u);}
+    $('wu-phase').textContent=['Follow the dot: figure eight','Follow the dot: side to side','Follow the dot: up and down'][cyc]+' '+Math.ceil((120000-t)/1000)+' s left';
+  }else{
+    var k=(Math.floor((w2-20000)/700)+cyc*2)%TARGETS.length;
+    x=TARGETS[k][0];y=TARGETS[k][1];
+    $('wu-phase').textContent='Jump with the dot '+Math.ceil((120000-t)/1000)+' s left';
+  }
+  d.style.left=(x*100)+'%';d.style.top=(y*100)+'%';
+  wu.raf=requestAnimationFrame(wuLoop);
+}
+$('wu-btn').onclick=function(){
+  if(wu.running){wuStop();return;}
+  wu.running=true;wu.t0=performance.now();$('wu-btn').textContent='Stop';
+  wu.raf=requestAnimationFrame(wuLoop);
+};
+leave['s-warm']=function(){wuStop();};
+
+/* ---------- Schulte ---------- */
+var sc={size:5,next:1,t0:0,iv:0,running:false};
+function scBestText(){var b=store.get('sc-best-'+sc.size,null);return b?'Best '+b.toFixed(1)+' s':'No best yet';}
+function scBuild(){
+  var n=sc.size*sc.size;
+  var nums=shuffle(Array.from({length:n},function(_,i){return i+1;}));
+  var g=$('sc-grid');g.innerHTML='';
+  g.style.gridTemplateColumns='repeat('+sc.size+',minmax(0,1fr))';g.dataset.size=sc.size;
+  nums.forEach(function(v,i){
+    var b=document.createElement('button');b.className='cell';b.textContent=v;b.dataset.n=v;
+    if(sc.size%2===1&&i===(n-1)/2)b.classList.add('mid');
+    g.appendChild(b);
+  });
+  sc.next=1;sc.running=true;sc.t0=performance.now();
+  clearInterval(sc.iv);sc.iv=setInterval(scTick,100);
+  $('sc-next').textContent='1';$('sc-time').textContent='0.0';$('sc-msg').textContent='';
+  $('sc-best').textContent=scBestText();
+  $('sc-hint').textContent=sc.size%2===1?'Keep your eyes on the red-outlined center cell. Tap the numbers in order using only your side vision.':'Keep your eyes on the middle of the grid. Tap the numbers in order using only your side vision.';
+  document.querySelectorAll('#sc-sizes .chip').forEach(function(c){c.setAttribute('aria-pressed',String(+c.dataset.v===sc.size));});
+}
+function scTick(){$('sc-time').textContent=((performance.now()-sc.t0)/1000).toFixed(1);}
+$('sc-grid').addEventListener('click',function(e){
+  var b=e.target.closest('.cell');if(!b||!sc.running)return;
+  var n=+b.dataset.n,total=sc.size*sc.size;
+  if(n===sc.next){
+    b.classList.add('found');sc.next++;
+    if(sc.next>total){
+      sc.running=false;clearInterval(sc.iv);
+      var t=(performance.now()-sc.t0)/1000;$('sc-time').textContent=t.toFixed(1);
+      var best=store.get('sc-best-'+sc.size,null);
+      if(!best||t<best){store.set('sc-best-'+sc.size,t);$('sc-msg').textContent='Done in '+t.toFixed(1)+' s. New best!';}
+      else{$('sc-msg').textContent='Done in '+t.toFixed(1)+' s. Best is '+best.toFixed(1)+' s.';}
+      $('sc-best').textContent=scBestText();
+    }else{$('sc-next').textContent=sc.next;}
+  }else{
+    b.classList.add('bad');setTimeout(function(){b.classList.remove('bad');},300);
+  }
+});
+$('sc-sizes').onclick=function(e){var c=e.target.closest('.chip');if(!c)return;sc.size=+c.dataset.v;scBuild();};
+$('sc-again').onclick=scBuild;
+enter['s-schulte']=scBuild;
+leave['s-schulte']=function(){clearInterval(sc.iv);sc.running=false;};
+
+/* ---------- Word flash ---------- */
+var DOTONLY='';
+function splitDot(t,hid){var s=String(t),n=s.length,i=Math.floor(n/2),j=i,k,vs=hid?';visibility:hidden':'';
+  if(s.charAt(i)===' '){for(k=1;k<n;k++){if(i-k>=0&&s.charAt(i-k)!==' '){j=i-k;break;}if(i+k<n&&s.charAt(i+k)!==' '){j=i+k;break;}}}
+  return '<span class="rl" style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);width:100%;white-space:pre"><span style="text-align:right'+vs+'">'+esc(s.slice(0,j))+'</span><span style="color:#FF7A5C;font-weight:800'+vs+'">'+esc(s.charAt(j))+'</span><span style="text-align:left'+vs+'">'+esc(s.slice(j+1))+'</span></span>';}
+var fl={n:3,ms:300,round:0,score:0,total:30,answer:'',timers:[],locked:true};
+function cleanWord(w){return w.replace(/^[^A-Za-z']+|[^A-Za-z']+$/g,'');}
+var DEFAULT_POOL=tokenize(SAMPLE).map(function(x){return cleanWord(x.t);}).filter(Boolean);
+function pool(){
+  var p=book.words.map(function(x){return cleanWord(x.t);}).filter(Boolean);
+  return p.length<60?DEFAULT_POOL:p;
+}
+function pickPhrase(P){
+  var best=null;
+  for(var a=0;a<80;a++){
+    var s=rand(P.length-fl.n),sl=P.slice(s,s+fl.n);best=sl;
+    if(sl.every(function(w){return w.length>=(fl.n===1?4:2)&&w.length<=12;}))return sl;
+  }
+  return best;
+}
+function distractor(sl,P){
+  var c=sl.slice(),p=rand(c.length),orig=c[p];
+  for(var a=0;a<80;a++){
+    var w=P[rand(P.length)];
+    if(Math.abs(w.length-orig.length)<=1&&w.toLowerCase()!==orig.toLowerCase()){c[p]=w;break;}
+  }
+  return c.join(' ');
+}
+function flClear(){fl.timers.forEach(clearTimeout);fl.timers=[];}
+function flLabels(){$('fl-ms').textContent=fl.ms+' ms';$('fl-n').textContent=fl.n+(fl.n===1?' word':' words');}
+function flNext(){
+  flClear();
+  $('fl-opts').innerHTML='';
+  if(fl.round>=fl.total){
+    $('fl-word').textContent=fl.score+' of '+fl.total;
+    $('fl-hint').textContent=fl.score>=fl.total*.9?'Sharp. Try a shorter flash or one more word.':fl.score<=fl.total*.5?'Slow the flash down or use fewer words.':'Good range. Run it again.';
+    $('fl-start').textContent='Play again';$('fl-start').style.display='';$('fl-prog').textContent='Finished';
+    return;
+  }
+  fl.round++;fl.locked=true;
+  $('fl-prog').textContent='Round '+fl.round+' of '+fl.total;
+  $('fl-word').innerHTML=DOTONLY;$('fl-hint').textContent='Look at the center';
+  var P=pool(),sl=pickPhrase(P);fl.answer=sl.join(' ');$('fl-word').innerHTML=splitDot(fl.answer,true);
+  var opts=[fl.answer],guard=0;
+  while(opts.length<3&&guard++<60){var d=distractor(sl,P);if(opts.indexOf(d)<0)opts.push(d);}
+  shuffle(opts);
+  fl.timers.push(setTimeout(function(){
+    var w=$('fl-word');w.style.fontSize=fl.n>=4?'28px':'34px';w.innerHTML=splitDot(fl.answer);$('fl-hint').textContent='';
+    fl.timers.push(setTimeout(function(){
+      w.innerHTML=splitDot(fl.answer,true);$('fl-hint').textContent='What did you see?';
+      opts.forEach(function(o){
+        var b=document.createElement('button');b.className='opt';b.textContent=o;
+        b.onclick=function(){
+          if(fl.locked)return;fl.locked=true;
+          var ok=o===fl.answer;if(ok)fl.score++;
+          b.classList.add(ok?'ok':'no');
+          if(!ok)document.querySelectorAll('#fl-opts .opt').forEach(function(x){if(x.textContent===fl.answer)x.classList.add('ok');});
+          fl.timers.push(setTimeout(flNext,1000));
+        };
+        $('fl-opts').appendChild(b);
+      });
+      fl.locked=false;
+    },fl.ms));
+  },700));
+}
+$('fl-start').onclick=function(){fl.round=0;fl.score=0;$('fl-start').style.display='none';flNext();};
+$('fl-msm').onclick=function(){fl.ms=Math.min(1000,fl.ms+50);flLabels();};
+$('fl-msp').onclick=function(){fl.ms=Math.max(50,fl.ms-50);flLabels();};
+$('fl-nm').onclick=function(){fl.n=Math.max(1,fl.n-1);flLabels();};
+$('fl-np').onclick=function(){fl.n=Math.min(4,fl.n+1);flLabels();};
+enter['s-flash']=function(){flClear();fl.round=0;fl.score=0;$('fl-opts').innerHTML='';$('fl-word').innerHTML=DOTONLY;$('fl-hint').textContent='Press Start. A phrase flashes at the center.';$('fl-start').textContent='Start';$('fl-start').style.display='';$('fl-prog').textContent='30 rounds, about 3 min';flLabels();};
+leave['s-flash']=flClear;
+
+/* ---------- shared controls ---------- */
+function controlsHTML(p,chunks){
+  var ch=chunks?'<div class="ctl-row"><span class="lbl">'+chunks.label+'</span><div class="chips" id="'+p+'-chunks">'+chunks.values.map(function(v){return '<button class="chip" data-v="'+v+'" aria-pressed="false">'+v+'</button>';}).join('')+'</div></div>':'';
+  return '<div class="ctl"><div class="ctl-row"><span class="lbl">Speed</span><div class="stepper"><button class="rbtn" id="'+p+'-slow" aria-label="Slower, 25 words per minute">−</button><div class="val"><span id="'+p+'-wpm">0</span> <small>wpm</small></div><button class="rbtn" id="'+p+'-fast" aria-label="Faster, 25 words per minute">+</button></div></div>'+ch+'<div class="ctl-play"><button class="ibtn" id="'+p+'-back" aria-label="Back">'+ICON_BACK+'</button><button class="play" id="'+p+'-play" aria-label="Play">'+ICON_PLAY+'</button><button class="ibtn" id="'+p+'-fwd" aria-label="Forward">'+ICON_FWD+'</button></div></div>';
+}
+function setPlayIcon(p,state){
+  var b=$(p+'-play');
+  if(state==='play'){b.innerHTML=ICON_PAUSE;b.setAttribute('aria-label','Pause');}
+  else if(state==='replay'){b.innerHTML=ICON_REPLAY;b.setAttribute('aria-label','Replay');}
+  else{b.innerHTML=ICON_PLAY;b.setAttribute('aria-label','Play');}
+}
+
+/* ---------- pacer (guided reading and column drill) ---------- */
+function Pacer(cfg){
+  var p={idx:0,pageStart:0,playing:false,timer:0,spans:[]};
+  p.render=function(){
+    var U=cfg.units(),end=Math.min(p.pageStart+cfg.pageSize,U.length);
+    cfg.el.innerHTML='';p.spans=[];
+    for(var i=p.pageStart;i<end;i++){
+      if(cfg.paragraphs&&U[i].br&&i>p.pageStart){var br=document.createElement('div');br.className='pbr';cfg.el.appendChild(br);}
+      var s=document.createElement('span');s.className='w';s.textContent=U[i].t;cfg.el.appendChild(s);p.spans.push(s);
+    }
+    p.paint();
+  };
+  p.paint=function(){
+    var U=cfg.units(),c=cfg.chunk(),e=Math.min(p.idx+c,U.length);
+    p.spans.forEach(function(s,k){
+      var i=p.pageStart+k,cls='w';
+      if(i<p.idx)cls+=' read';
+      else if(i<e){var f=i===p.idx,l=i===e-1;cls+=' cur'+(f&&l?' solo':f?' first':l?' last':'');}
+      s.className=cls;
+    });
+    if(cfg.onIndex)cfg.onIndex(p.idx);
+  };
+  p.ensure=function(){
+    if(p.idx<p.pageStart||p.idx+cfg.chunk()>p.pageStart+cfg.pageSize){p.pageStart=p.idx;p.render();}else p.paint();
+  };
+  p.load=function(i){p.idx=clamp(i,0,Math.max(0,cfg.units().length-1));p.pageStart=p.idx;p.render();};
+  p.refresh=function(){p.ensure();};
+  p.reschedule=function(){clearTimeout(p.timer);if(!p.playing)return;
+    var U=cfg.units(),c=cfg.chunk(),d=60000*c/cfg.wpm(),last=U[Math.min(p.idx+c,U.length)-1];
+    if(last&&/[.!?]["')\]]*$/.test(last.t))d*=1.4;
+    p.timer=setTimeout(p.advance,d);};
+  p.advance=function(){
+    var U=cfg.units(),next=p.idx+cfg.chunk();
+    if(next>=U.length){p.playing=false;if(cfg.onState)cfg.onState('replay');return;}
+    p.idx=next;p.ensure();p.reschedule();
+  };
+  p.play=function(){
+    var U=cfg.units();
+    if(p.idx+cfg.chunk()>=U.length){p.load(0);}
+    p.playing=true;if(cfg.onState)cfg.onState('play');p.reschedule();
+  };
+  p.pause=function(){p.playing=false;clearTimeout(p.timer);if(cfg.onState)cfg.onState('pause');};
+  p.seek=function(i){p.idx=clamp(i,0,Math.max(0,cfg.units().length-1));p.ensure();p.reschedule();};
+  return p;
+}
+function wire(prefix,pacer,st,skip,onChunk){
+  function sync(){
+    $(prefix+'-wpm').textContent=st.wpm;
+    var ch=$(prefix+'-chunks');
+    if(ch)ch.querySelectorAll('.chip').forEach(function(b){b.setAttribute('aria-pressed',String(+b.dataset.v===st.chunk));});
+  }
+  $(prefix+'-slow').onclick=function(){st.wpm=Math.max(100,st.wpm-25);sync();pacer.reschedule();};
+  $(prefix+'-fast').onclick=function(){st.wpm=Math.min(1200,st.wpm+25);sync();pacer.reschedule();};
+  $(prefix+'-play').onclick=function(){if(pacer.playing)pacer.pause();else pacer.play();};
+  $(prefix+'-back').onclick=function(){pacer.seek(pacer.idx-skip);};
+  $(prefix+'-fwd').onclick=function(){pacer.seek(pacer.idx+skip);};
+  var ch=$(prefix+'-chunks');
+  if(ch)ch.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;st.chunk=+b.dataset.v;if(onChunk)onChunk();sync();pacer.refresh();pacer.reschedule();};
+  sync();
+  return sync;
+}
+
+/* ---------- guided reading ---------- */
+var gst={wpm:350,chunk:3};
+$('g-ctl').innerHTML=controlsHTML('g',{label:'Words per chunk',values:[1,2,3,4]});
+var gp=Pacer({
+  el:$('g-text'),pageSize:120,paragraphs:true,
+  units:function(){return book.words;},chunk:function(){return gst.chunk;},wpm:function(){return gst.wpm;},
+  onIndex:function(i){setPos(i);$('g-bar').style.width=(book.words.length>1?Math.round(100*i/(book.words.length-1)):0)+'%';},
+  onState:function(s){setPlayIcon('g',s);}
+});
+wire('g',gp,gst,6);
+enter['s-guided']=function(){gp.load(book.pos);setPlayIcon('g','pause');};
+leave['s-guided']=function(){gp.pause();renderBook();};
+
+/* ---------- column drill ---------- */
+var cst={wpm:300,chunk:3},lines=[];
+function buildLines(){
+  lines=[];var W=book.words,n=cst.chunk;
+  for(var k=0;k<W.length;k+=n){lines.push({t:W.slice(k,k+n).map(function(x){return x.t;}).join(' ')});}
+}
+$('c-ctl').innerHTML=controlsHTML('c',{label:'Words per line',values:[2,3,4]});
+var cp=Pacer({
+  el:$('c-text'),pageSize:10,paragraphs:false,
+  units:function(){return lines;},chunk:function(){return 1;},wpm:function(){return cst.wpm/cst.chunk;},
+  onIndex:function(i){setPos(Math.min(book.words.length-1,i*cst.chunk));},
+  onState:function(s){setPlayIcon('c',s);}
+});
+wire('c',cp,cst,4,function(){var w=book.pos;buildLines();cp.load(Math.floor(w/cst.chunk));});
+enter['s-col']=function(){buildLines();cp.load(Math.floor(book.pos/cst.chunk));setPlayIcon('c','pause');};
+leave['s-col']=function(){cp.pause();renderBook();};
+
+/* ---------- word flow (one word at a time) ---------- */
+var rs={i:0,playing:false,wpm:400,ramp:false,timer:0,count:0};
+$('rs-ctl').innerHTML=controlsHTML('r',{label:'Speed ramp',values:['Off','On']}).replace('<button class="chip" data-v="Off"','<button class="chip" data-v="0"').replace('<button class="chip" data-v="On"','<button class="chip" data-v="1"');
+function orp(n){return n<=1?0:n<=5?1:n<=9?2:n<=13?3:4;}
+function rsRender(){
+  var W=book.words,w=W[rs.i];if(!w)return;
+  var t=w.t,lead=t.match(/^[^A-Za-z0-9]*/)[0].length,core=t.replace(/[^A-Za-z0-9]+$/,'').length-lead;
+  var o=clamp(lead+orp(Math.max(core,1)),0,t.length-1);
+  $('rs-b').textContent=t.slice(0,o);$('rs-p').textContent=t.charAt(o);$('rs-a').textContent=t.slice(o+1);
+  $('rs-word').style.fontSize=t.length<=9?'46px':t.length<=12?'38px':t.length<=16?'30px':'24px';
+  var prev=W.slice(Math.max(0,rs.i-6),rs.i).map(function(x){return x.t;}).join(' ');
+  var next=W.slice(rs.i+1,rs.i+10).map(function(x){return x.t;}).join(' ');
+  var ctx=$('rs-ctx');ctx.textContent='';
+  ctx.appendChild(document.createTextNode(prev+' '));
+  var b=document.createElement('b');b.textContent=t;ctx.appendChild(b);
+  ctx.appendChild(document.createTextNode(' '+next));
+  var pct=W.length>1?Math.round(100*rs.i/(W.length-1)):0;
+  $('rs-bar').style.width=pct+'%';$('rs-pct').textContent=pct+'% of book';
+  setPos(rs.i);
+}
+function rsSchedule(){
+  clearTimeout(rs.timer);if(!rs.playing)return;
+  var w=book.words[rs.i],d=60000/rs.wpm;
+  if(/[.!?]["')\]]*$/.test(w.t))d*=1.8;else if(/[,;:]["')\]]*$/.test(w.t))d*=1.35;else if(w.t.length>=9)d*=1.2;
+  rs.timer=setTimeout(rsAdvance,d);
+}
+function rsAdvance(){
+  if(rs.i>=book.words.length-1){rs.playing=false;setPlayIcon('r','replay');return;}
+  rs.i++;rs.count++;
+  if(rs.ramp&&rs.count%30===0){rs.wpm=Math.min(1000,rs.wpm+5);$('r-wpm').textContent=rs.wpm;}
+  rsRender();rsSchedule();
+}
+function rsPause(){rs.playing=false;clearTimeout(rs.timer);setPlayIcon('r','pause');}
+$('r-slow').onclick=function(){rs.wpm=Math.max(100,rs.wpm-25);$('r-wpm').textContent=rs.wpm;};
+$('r-fast').onclick=function(){rs.wpm=Math.min(1000,rs.wpm+25);$('r-wpm').textContent=rs.wpm;};
+$('r-play').onclick=function(){
+  if(rs.playing){rsPause();return;}
+  if(rs.i>=book.words.length-1){rs.i=0;rsRender();}
+  rs.playing=true;setPlayIcon('r','play');rsSchedule();
+};
+$('r-back').onclick=function(){rs.i=Math.max(0,rs.i-10);rsRender();rsSchedule();};
+$('r-fwd').onclick=function(){rs.i=Math.min(book.words.length-1,rs.i+10);rsRender();rsSchedule();};
+$('r-chunks').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;rs.ramp=b.dataset.v==='1';$('r-chunks').querySelectorAll('.chip').forEach(function(c){c.setAttribute('aria-pressed',String(c===b));});};
+$('r-chunks').querySelectorAll('.chip')[0].setAttribute('aria-pressed','true');
+enter['s-flow']=function(){rs.i=book.pos;rs.count=0;$('r-wpm').textContent=rs.wpm;setPlayIcon('r','pause');rsRender();};
+leave['s-flow']=function(){rsPause();renderBook();};
+
+/* ---------- speed test ---------- */
+var tt={t0:0,raw:0};
+function tSec(id){['t-intro','t-read','t-quiz','t-res'].forEach(function(s){$(s).classList.toggle('on',s===id);});$('s-test').scrollTop=0;}
+function tReset(){tSec('t-intro');}
+$('t-start').onclick=function(){$('t-passage').textContent=TEST_TEXT;tSec('t-read');tt.t0=performance.now();};
+$('t-done').onclick=function(){
+  var secs=(performance.now()-tt.t0)/1000,words=TEST_TEXT.split(/\s+/).length;
+  tt.raw=Math.round(words/(Math.max(secs,1)/60));
+  var qs=$('t-qs');qs.innerHTML='';
+  TEST_Q.forEach(function(q,qi){
+    var f=document.createElement('fieldset');f.className='q';
+    var l=document.createElement('legend');l.textContent=(qi+1)+'. '+q.q;f.appendChild(l);
+    q.o.forEach(function(o,oi){
+      var lab=document.createElement('label');lab.setAttribute('for','q'+qi+'o'+oi);
+      var inp=document.createElement('input');inp.type='radio';inp.name='q'+qi;inp.id='q'+qi+'o'+oi;inp.value=oi;
+      inp.onchange=function(){$('t-submit').disabled=!TEST_Q.every(function(_,k){return document.querySelector('input[name="q'+k+'"]:checked');});};
+      lab.appendChild(inp);lab.appendChild(document.createTextNode(o));f.appendChild(lab);
+    });
+    qs.appendChild(f);
+  });
+  $('t-submit').disabled=true;tSec('t-quiz');
+};
+$('t-submit').onclick=function(){
+  var score=0;
+  TEST_Q.forEach(function(q,k){var c=document.querySelector('input[name="q'+k+'"]:checked');if(c&&+c.value===q.a)score++;});
+  var eff=Math.round(tt.raw*score/TEST_Q.length),prev=store.get('test-last',null);
+  store.set('test-last',{raw:tt.raw,eff:eff,score:score});var tlg=store.get('test-log',[]);tlg.push({t:Date.now(),raw:tt.raw,eff:eff,score:score});store.set('test-log',tlg.slice(-30));
+  $('t-eff').textContent=eff;
+  $('t-detail').textContent='You read at '+tt.raw+' wpm and answered '+score+' of '+TEST_Q.length+' correctly.'+(prev?' Last time: '+prev.eff+' wpm.':'');
+  tSec('t-res');
+};
+$('t-again').onclick=tReset;
+enter['s-test']=tReset;
+function hubPill(){var l=store.get('test-last',null);$('hub-pill').textContent=l?'Last test: '+l.eff+' wpm':'Speed test: none yet';}
+enter['s-hub']=hubPill;
+
+/* ---------- read tab: import ---------- */
+function msg(t){$('read-msg').textContent=t;}
+async function inflateRaw(u8){
+  var ds=new DecompressionStream('deflate-raw');
+  var stream=new Blob([u8]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+function readZip(buf){
+  var dv=new DataView(buf),u8=new Uint8Array(buf),eocd=-1;
+  for(var i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-65557);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+  if(eocd<0)throw new Error('That file is not a valid EPUB.');
+  var count=dv.getUint16(eocd+10,true),p=dv.getUint32(eocd+16,true),entries={},dec=new TextDecoder();
+  for(var k=0;k<count;k++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    var method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true);
+    var nlen=dv.getUint16(p+28,true),xlen=dv.getUint16(p+30,true),clen=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
+    var name=dec.decode(u8.subarray(p+46,p+46+nlen));
+    entries[name]={method:method,csize:csize,off:off};
+    p+=46+nlen+xlen+clen;
+  }
+  return {entries:entries,get:async function(name){
+    var e=entries[name];if(!e)return null;
+    var ln=dv.getUint16(e.off+26,true),lx=dv.getUint16(e.off+28,true),start=e.off+30+ln+lx;
+    var raw=u8.subarray(start,start+e.csize);
+    return dec.decode(e.method===0?raw:await inflateRaw(raw));
+  }};
+}
+async function parseEpub(buf){
+  var zip=readZip(buf),P=new DOMParser();
+  var cont=await zip.get('META-INF/container.xml');
+  if(!cont)throw new Error('This EPUB has no container file.');
+  var opfPath=P.parseFromString(cont,'text/xml').querySelector('rootfile').getAttribute('full-path');
+  var opf=P.parseFromString(await zip.get(opfPath),'text/xml');
+  var dir=opfPath.indexOf('/')>=0?opfPath.replace(/[^/]*$/,''):'';
+  var manifest={};
+  opf.querySelectorAll('manifest > item').forEach(function(it){manifest[it.getAttribute('id')]={href:it.getAttribute('href'),type:it.getAttribute('media-type')||''};});
+  var tEl=opf.getElementsByTagName('dc:title')[0];
+  var title=tEl?tEl.textContent.trim():'';
+  var parts=[],refs=opf.querySelectorAll('spine > itemref');
+  for(var i=0;i<refs.length;i++){
+    var m=manifest[refs[i].getAttribute('idref')];
+    if(!m||!/html/.test(m.type))continue;
+    var path=decodeURIComponent(new URL(m.href,'http://x/'+dir).pathname.slice(1));
+    var html=await zip.get(path);if(!html)continue;
+    var doc=P.parseFromString(html,'text/html');
+    var blocks=doc.body?doc.body.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li'):[];
+    var texts=[];
+    blocks.forEach(function(b){var t=b.textContent.replace(/\s+/g,' ').trim();if(t)texts.push(t);});
+    if(!texts.length&&doc.body){var t2=doc.body.textContent.replace(/\s+/g,' ').trim();if(t2)texts.push(t2);}
+    if(texts.length)parts.push(texts.join('\n\n'));
+  }
+  return {title:title,text:parts.join('\n\n')};
+}
+$('file').addEventListener('change',async function(e){
+  var f=e.target.files[0];if(!f)return;
+  msg('Loading '+f.name+'...');
+  try{
+    var title=f.name.replace(/\.[^.]+$/,''),text;
+    if(/\.epub$/i.test(f.name)){var r=await parseEpub(await f.arrayBuffer());title=r.title||title;text=r.text;}
+    else if(/\.pdf$/i.test(f.name)){throw new Error('PDF import is not in this test. Try an EPUB or a .txt file.');}
+    else text=await f.text();
+    if(text.split(/\s+/).filter(Boolean).length<20)throw new Error('Not enough readable text found in that file.');
+    setBook(title,text);
+    msg('Loaded "'+title+'". Pick a mode below.');
+  }catch(err){msg(err.message||'Could not read that file.');}
+  e.target.value='';
+});
+$('paste-use').onclick=function(){
+  var t=$('paste').value.trim();
+  if(t.split(/\s+/).filter(Boolean).length<20){msg('Paste at least 20 words.');return;}
+  setBook('Pasted text',t);msg('Loaded pasted text. Pick a mode below.');
+};
+$('bk-restart').onclick=function(){setPos(0);renderBook();msg('Back at the start.');};
+enter['s-read']=function(){renderBook();};
+
+/* ===================== EXERCISE CONTENT (original text, EN + ES) ===================== */
+var LEVELS3=['Beginner','Intermediate','Advanced'];
+var C={};
+
+/* passages: text + 3 questions (two details, one main idea) */
+C.passages={
+en:[
+{t:"Sleep is not wasted time. While we rest, the brain sorts the day's memories and clears away waste that builds up while we are awake. People who sleep well learn faster, make fewer mistakes, and feel calmer the next morning. Even a short nap can restore attention for a few hours.",
+ q:[["What does the brain clear away during sleep?","Waste that builds up while awake","Sounds from the street","Hunger"],
+    ["What can a short nap restore?","Attention for a few hours","A full night of sleep","Lost memories"],
+    ["What is the main idea?","Sleep helps the brain and body work better","Naps are always harmful","People who eat well need no rest"]]},
+{t:"Rivers shape the land slowly. Water carries soil from the mountains and leaves it on the plains, where farmers have grown crops for thousands of years. Many great cities began beside a river because it offered water, food, and an easy road for trade.",
+ q:[["Where does the water carry the soil from?","The mountains","The ocean","The desert"],
+    ["Why did cities begin beside rivers?","Water, food and trade routes","Cold weather","Rivers are straight"],
+    ["What is the main idea?","Rivers have shaped farming and cities","Mountains are shrinking quickly","Rivers are always dangerous"]]},
+{t:"A habit forms when an action is repeated in the same place at the same time. At first it takes effort and attention. After a few weeks the brain treats it as routine and needs very little energy to carry it out. Small habits kept every day can change a whole year.",
+ q:[["What helps a habit form?","Repeating an action in the same setting","Doing it once with great effort","Changing the place every day"],
+    ["What happens after a few weeks?","The brain treats it as routine","The habit disappears","It needs more attention"],
+    ["What is the main idea?","Small daily habits can have large effects","Habits cannot be changed","Effort never matters"]]},
+{t:"Coffee began as a wild plant in the highlands of Ethiopia. Traders carried the beans across the Red Sea, and soon coffee houses opened in cities across the region, where people met to talk, read, and trade news. Today it is grown in more than seventy countries.",
+ q:[["Where did coffee first grow wild?","The Ethiopian highlands","The Brazilian coast","Alpine valleys"],
+    ["What did people do in the first coffee houses?","Talk, read and trade news","Plant the beans","Sleep"],
+    ["What is the main idea?","Coffee spread from a wild plant to a global drink","Coffee harms health","Cities no longer have cafes"]]},
+{t:"A honeybee colony works like a single body. Workers gather nectar, nurse the young, and guard the entrance, while the queen lays up to two thousand eggs a day. A returning forager dances to tell the others where flowers are found, using the angle of the dance to show the direction.",
+ q:[["How many eggs can the queen lay in a day?","Up to two thousand","About twenty","Exactly one"],
+    ["How does a forager share where flowers are?","By dancing","By singing","By leaving a smell trail only"],
+    ["What is the main idea?","Honeybees cooperate with clear roles","Queens do all the work","Bees work alone"]]},
+{t:"Long before satellites, sailors trusted hand-drawn maps to cross oceans. Mapmakers collected reports from many voyages and corrected the coastlines a little each year. A good map was valued like treasure, because one wrong line could send a ship onto the rocks.",
+ q:[["What did mapmakers collect?","Reports from many voyages","Gold coins","Satellite photos"],
+    ["Why were good maps valued?","A wrong line could wreck a ship","They were colorful","They were very small"],
+    ["What is the main idea?","Accurate maps were vital to sailors","Satellites replaced sailors","Coastlines never change"]]}
+],
+es:[
+{t:"Dormir no es perder el tiempo. Mientras descansamos, el cerebro ordena los recuerdos del día y elimina los desechos que se acumulan durante la vigilia. Quienes duermen bien aprenden más rápido, cometen menos errores y amanecen más tranquilos. Incluso una siesta corta puede devolver la atención por unas horas.",
+ q:[["¿Qué elimina el cerebro mientras dormimos?","Desechos acumulados durante la vigilia","Ruidos de la calle","El hambre"],
+    ["¿Qué puede devolver una siesta corta?","La atención por unas horas","Una noche completa de sueño","Recuerdos perdidos"],
+    ["¿Cuál es la idea principal?","Dormir ayuda al cerebro y al cuerpo a funcionar mejor","Las siestas siempre hacen daño","Quien come bien no necesita descansar"]]},
+{t:"Los ríos moldean la tierra poco a poco. El agua arrastra tierra desde las montañas y la deja en las llanuras, donde los agricultores cultivan desde hace miles de años. Muchas grandes ciudades nacieron junto a un río porque ofrecía agua, alimento y un camino fácil para el comercio.",
+ q:[["¿De dónde arrastra tierra el agua?","De las montañas","Del océano","Del desierto"],
+    ["¿Por qué nacieron ciudades junto a los ríos?","Por el agua, el alimento y el comercio","Por el clima frío","Porque los ríos son rectos"],
+    ["¿Cuál es la idea principal?","Los ríos han moldeado la agricultura y las ciudades","Las montañas se encogen rápido","Los ríos siempre son peligrosos"]]},
+{t:"Un hábito se forma cuando una acción se repite en el mismo lugar y a la misma hora. Al principio exige esfuerzo y atención. Tras unas semanas, el cerebro lo trata como rutina y gasta muy poca energía en hacerlo. Los hábitos pequeños, mantenidos cada día, pueden cambiar un año entero.",
+ q:[["¿Qué ayuda a formar un hábito?","Repetir la acción en el mismo entorno","Hacerlo una vez con mucho esfuerzo","Cambiar de lugar cada día"],
+    ["¿Qué ocurre tras unas semanas?","El cerebro lo trata como rutina","El hábito desaparece","Exige más atención"],
+    ["¿Cuál es la idea principal?","Los hábitos pequeños diarios tienen grandes efectos","Los hábitos no se pueden cambiar","El esfuerzo nunca importa"]]},
+{t:"El café nació como una planta silvestre en las tierras altas de Etiopía. Los comerciantes llevaron los granos al otro lado del Mar Rojo y pronto se abrieron cafés en las ciudades de la región, donde la gente se reunía a conversar, leer e intercambiar noticias. Hoy se cultiva en más de setenta países.",
+ q:[["¿Dónde creció primero el café silvestre?","En las tierras altas de Etiopía","En la costa de Brasil","En valles alpinos"],
+    ["¿Qué hacía la gente en los primeros cafés?","Conversar, leer e intercambiar noticias","Sembrar granos","Dormir"],
+    ["¿Cuál es la idea principal?","El café pasó de planta silvestre a bebida mundial","El café daña la salud","Las ciudades ya no tienen cafés"]]},
+{t:"Una colmena de abejas funciona como un solo cuerpo. Las obreras recogen néctar, cuidan las crías y vigilan la entrada, mientras la reina pone hasta dos mil huevos al día. La abeja exploradora que regresa baila para indicar dónde hay flores, y el ángulo del baile muestra la dirección.",
+ q:[["¿Cuántos huevos puede poner la reina al día?","Hasta dos mil","Unos veinte","Exactamente uno"],
+    ["¿Cómo indica la exploradora dónde hay flores?","Bailando","Cantando","Solo con un rastro de olor"],
+    ["¿Cuál es la idea principal?","Las abejas cooperan con funciones claras","La reina hace todo el trabajo","Las abejas trabajan solas"]]},
+{t:"Mucho antes de los satélites, los marinos confiaban en mapas dibujados a mano para cruzar los océanos. Los cartógrafos reunían informes de muchos viajes y corregían las costas un poco cada año. Un buen mapa valía como un tesoro, porque una línea equivocada podía llevar un barco a las rocas.",
+ q:[["¿Qué reunían los cartógrafos?","Informes de muchos viajes","Monedas de oro","Fotos de satélite"],
+    ["¿Por qué se valoraban los buenos mapas?","Una línea equivocada podía hundir un barco","Eran muy coloridos","Eran muy pequeños"],
+    ["¿Cuál es la idea principal?","Los mapas precisos eran vitales para los marinos","Los satélites reemplazaron a los marinos","Las costas nunca cambian"]]}
+]};
+
+/* range expansion rows: widening single words and phrases */
+C.rangeWords={
+en:[["a","is","sun","tree","happy","garden","morning","children","beautiful"],
+    ["to be","the day","a tall tree","my old house","the quiet street","a warm afternoon","three small windows","the long summer road","an open wooden door"],
+    ["by the river","in the morning","near the old bridge","under a cloudy sky","across the quiet valley","during the long winter","between two tall mountains","beside the narrow garden path","along the edge of the green forest"]],
+es:[["y","la","sol","mesa","campo","puente","caminos","ventanal","mariposas"],
+    ["de la","el día","un árbol alto","mi casa vieja","la calle tranquila","una tarde cálida","tres ventanas chicas","el camino de verano","una puerta de madera"],
+    ["junto al río","por la mañana","cerca del puente viejo","bajo un cielo nublado","a través del valle tranquilo","durante el largo invierno","entre dos montañas altas","al lado del sendero estrecho","en el borde del bosque verde"]]};
+C.rangeText={
+en:[["Tom","walked to","the market","early in the","morning, carrying","a blue cloth bag","that his mother had","sewn for him last","winter. He bought bread,","two ripe oranges, and","a jar of golden honey."],
+    ["Many old maps","were drawn by hand","long before satellites","existed. Sailors trusted","them to cross oceans and","to find small islands in","the middle of wide seas.","Today we check our phones,","but the skill of reading","a map still trains the mind","to see where things belong."]],
+es:[["Tomás","caminó al","mercado muy","temprano en la","mañana, con una","bolsa de tela azul","que su madre le","había cosido el","invierno pasado. Compró","pan, dos naranjas maduras","y un frasco de miel."],
+    ["Muchos mapas antiguos","se dibujaban a mano","mucho antes de que","existieran los satélites.","Los marinos confiaban en","ellos para cruzar océanos","y hallar islas pequeñas","en medio de mares anchos.","Hoy miramos el teléfono,","pero saber leer un mapa","aún entrena la mente."]]};
+
+/* word banks */
+C.short={en:["cat","dog","sun","map","pen","cup","bus","hat","sky","box","key","car","bed","egg","ice","leg","net","oil","rug","tea","van","web","zoo","arm","bag","cow","fan","gum","jar","lip","table","chair","river","stone","bread","plant","cloud","light","music","green","house","dream","water","field","smile","tiger","apple","beach","clock","dance","flame","glass","honey","knife","lemon","month","night","ocean","paper","queen"],
+ es:["sol","mar","pan","luz","red","voz","mes","rey","pie","ojo","ala","oso","ley","uva","gas","dos","uno","sal","tos","paz","mesa","luna","casa","agua","vida","mano","cielo","tabla","silla","plaza","nubes","playa","campo","mundo","libro","tarde","noche","barco","calle","fuego","verde","dulce","calor","reloj","queso","piano","tigre","limón","gente","hojas"]};
+C.long={en:["strategic","dimension","innovation","stability","enterprise","technology","competitive","integration","obligation","development","management","efficiency","adventure","knowledge","education","important","community","difference","creativity","structure"],
+ es:["estratégico","dimensiones","innovación","estabilidad","empresarial","tecnologías","competitivo","integración","obligación","desarrollo","conocimiento","educación","importancia","organización","comunidades","diferencias","creatividad","estructura","experiencia","posibilidad"]};
+
+/* classify: 3 levels x 4 categories x 5 words */
+C.classify={
+en:[[["Animals","dog","horse","eagle","shark","rabbit"],["Fruits","apple","grape","mango","pear","cherry"],["Colors","violet","yellow","blue","red","pink"],["Tools","hammer","saw","wrench","drill","pliers"]],
+    [["Body","liver","spine","kidney","elbow","tendon"],["Weather","drizzle","gale","humidity","frost","thunder"],["Music","melody","chord","tempo","rhythm","octave"],["Cooking","simmer","whisk","sauté","marinate","knead"]],
+    [["Personality","stubborn","generous","shy","ambitious","patient"],["Economy","inflation","tariff","deficit","dividend","recession"],["Government","senate","ballot","treaty","mandate","cabinet"],["Art and design","contrast","texture","palette","perspective","composition"]]],
+es:[[["Animales","perro","caballo","águila","tiburón","conejo"],["Frutas","manzana","uva","mango","pera","cereza"],["Colores","rojo","verde","morado","amarillo","rosado"],["Herramientas","martillo","sierra","llave","taladro","alicate"]],
+    [["Cuerpo","hígado","columna","riñón","codo","tendón"],["Clima","llovizna","ventarrón","humedad","escarcha","trueno"],["Música","melodía","acorde","compás","ritmo","octava"],["Cocina","hervir","batir","saltear","marinar","amasar"]],
+    [["Personalidad","terco","generoso","tímido","ambicioso","paciente"],["Economía","inflación","arancel","déficit","dividendo","recesión"],["Gobierno","senado","sufragio","tratado","mandato","gabinete"],["Arte y diseño","contraste","textura","paleta","perspectiva","composición"]]]};
+
+/* complete: sentence with ___ blanks, option pairs, correct index */
+C.complete={
+en:[[["The dog ___ loudly at the stranger, but then ___ its tail.",[["barked","wagged"],["sang","folded"],["barked","painted"],["slept","wagged"]],0],
+     ["She put on her ___ because it was ___ outside.",[["coat","cold"],["coat","sunny"],["sandals","cold"],["sandals","windy"]],0],
+     ["We ___ the bread in the oven until it turned ___.",[["baked","golden"],["baked","frozen"],["froze","golden"],["read","golden"]],0],
+     ["The ___ sun rose over the ___ hills.",[["bright","distant"],["bitter","distant"],["bright","tasty"],["loud","distant"]],0]],
+    [["Despite the heavy rain, the match ___ as planned, and the crowd ___ the players.",[["continued","cheered"],["collapsed","cheered"],["continued","painted"],["dissolved","welcomed"]],0],
+     ["The scientist ___ her results carefully before she ___ them to the committee.",[["reviewed","presented"],["reviewed","erased"],["ignored","presented"],["inhaled","presented"]],0],
+     ["A ___ budget leaves little room for ___ expenses.",[["tight","unexpected"],["tight","delicious"],["generous","unexpected"],["tight","distant"]],0],
+     ["He spoke so ___ that the audience had to ___ forward to hear him.",[["quietly","lean"],["quietly","run"],["loudly","lean"],["quietly","sing"]],0]],
+    [["The committee's ___ decision was widely ___ by independent economists.",[["controversial","criticized"],["microscopic","criticized"],["controversial","knitted"],["edible","praised"]],0],
+     ["Rather than ___ the problem, the manager chose to ___ it head-on.",[["avoid","confront"],["avoid","avoid"],["confront","confront"],["confront","avoid"]],0],
+     ["Her argument was so ___ that even her critics were ___ to admit it.",[["persuasive","forced"],["persuasive","eager"],["feeble","forced"],["persuasive","delighted"]],0],
+     ["The ___ of the evidence left no ___ about the verdict.",[["strength","doubt"],["strength","banana"],["weakness","doubt"],["weight","room"]],0]]],
+es:[[["El perro ___ fuerte al extraño y luego ___ la cola.",[["ladró","movió"],["cantó","movió"],["ladró","pintó"],["durmió","movió"]],0],
+     ["Se puso el ___ porque afuera hacía ___.",[["abrigo","frío"],["abrigo","calor"],["bañador","frío"],["bañador","viento"]],0],
+     ["Horneamos el pan hasta que quedó ___ y ___.",[["dorado","crujiente"],["dorado","congelado"],["hundido","crujiente"],["mojado","crujiente"]],0],
+     ["El sol ___ salió sobre las colinas ___.",[["brillante","lejanas"],["amargo","lejanas"],["brillante","sabrosas"],["ruidoso","lejanas"]],0]],
+    [["A pesar de la lluvia, el partido ___ según lo previsto y el público ___ a los jugadores.",[["continuó","aplaudió"],["se derritió","aplaudió"],["continuó","pintó"],["se disolvió","recibió"]],0],
+     ["La científica ___ sus resultados con cuidado antes de ___ ante el comité.",[["revisó","presentarlos"],["revisó","borrarlos"],["ignoró","presentarlos"],["inhaló","presentarlos"]],0],
+     ["Un presupuesto ___ deja poco espacio para gastos ___.",[["ajustado","imprevistos"],["ajustado","deliciosos"],["holgado","imprevistos"],["ajustado","lejanos"]],0],
+     ["Habló tan ___ que el público tuvo que ___ hacia adelante para oírlo.",[["bajo","inclinarse"],["bajo","correr"],["fuerte","inclinarse"],["bajo","cantar"]],0]],
+    [["La ___ decisión del comité fue ___ por economistas independientes.",[["polémica","criticada"],["microscópica","criticada"],["polémica","tejida"],["comestible","elogiada"]],0],
+     ["En lugar de ___ el problema, la gerente decidió ___ de frente.",[["evitar","enfrentarlo"],["evitar","evitarlo"],["enfrentar","enfrentarlo"],["enfrentar","evitarlo"]],0],
+     ["Su argumento era tan ___ que hasta sus críticos se vieron ___ a admitirlo.",[["convincente","obligados"],["convincente","ansiosos"],["débil","obligados"],["convincente","encantados"]],0],
+     ["La ___ de las pruebas no dejó ___ sobre el veredicto.",[["solidez","dudas"],["solidez","bananas"],["debilidad","dudas"],["dureza","espacio"]],0]]]};
+
+/* roots: [root, accepted answers] */
+C.roots={
+en:[[["aqua",["water"]],["terra",["earth","land","ground","soil"]],["vita",["life"]],["ignis",["fire"]],["luna",["moon"]],["sol",["sun"]],["manus",["hand"]],["pes",["foot"]],["caput",["head"]],["dens",["tooth"]]],
+    [["scribere",["to write","write"]],["videre",["to see","see"]],["audire",["to hear","hear","to listen","listen"]],["dicere",["to say","say","to speak","speak"]],["portare",["to carry","carry"]],["vocare",["to call","call"]],["movere",["to move","move"]],["tenere",["to hold","hold","to keep","keep"]],["ponere",["to put","put","to place","place"]],["mittere",["to send","send"]]],
+    [["bene",["well","good"]],["male",["badly","bad","ill"]],["omni",["all","every"]],["sub",["under","below"]],["trans",["across","through","beyond"]],["prae",["before"]],["contra",["against","opposite"]],["circum",["around"]],["inter",["between","among"]],["post",["after","behind"]]]],
+es:[[["aqua",["agua"]],["terra",["tierra","suelo"]],["vita",["vida"]],["ignis",["fuego"]],["luna",["luna"]],["sol",["sol"]],["manus",["mano"]],["pes",["pie"]],["caput",["cabeza"]],["dens",["diente"]]],
+    [["scribere",["escribir"]],["videre",["ver","mirar"]],["audire",["oir","escuchar"]],["dicere",["decir","hablar"]],["portare",["llevar","portar","cargar"]],["vocare",["llamar"]],["movere",["mover"]],["tenere",["sostener","tener","mantener","agarrar"]],["ponere",["poner","colocar"]],["mittere",["enviar","mandar"]]],
+    [["bene",["bien"]],["male",["mal"]],["omni",["todo","todos"]],["sub",["bajo","debajo","abajo"]],["trans",["a traves","atravesar","mas alla","al otro lado"]],["prae",["antes","delante"]],["contra",["contra","en contra"]],["circum",["alrededor"]],["inter",["entre"]],["post",["despues","detras"]]]]};
+
+/* synonyms / antonyms: [word, answer] */
+C.syn={
+en:[["big","large"],["quick","fast"],["happy","glad"],["begin","start"],["silent","quiet"],["smart","clever"],["difficult","hard"],["tired","weary"],["buy","purchase"],["end","finish"],["rich","wealthy"],["small","tiny"],["angry","mad"],["strange","odd"],["brave","bold"],["choose","select"],["help","assist"]],
+es:[["rápido","veloz"],["feliz","contento"],["empezar","comenzar"],["callado","silencioso"],["listo","inteligente"],["difícil","complicado"],["cansado","agotado"],["comprar","adquirir"],["terminar","acabar"],["rico","adinerado"],["pequeño","diminuto"],["enojado","molesto"],["raro","extraño"],["valiente","audaz"],["escoger","elegir"],["ayudar","auxiliar"],["bonito","hermoso"]]};
+C.ant={
+en:[["hot","cold"],["up","down"],["fast","slow"],["light","dark"],["early","late"],["rich","poor"],["strong","weak"],["open","closed"],["full","empty"],["old","young"],["win","lose"],["love","hate"],["brave","cowardly"],["rough","smooth"],["always","never"],["thick","thin"],["generous","selfish"]],
+es:[["caliente","frío"],["arriba","abajo"],["rápido","lento"],["claro","oscuro"],["temprano","tarde"],["rico","pobre"],["fuerte","débil"],["abierto","cerrado"],["lleno","vacío"],["viejo","joven"],["ganar","perder"],["amor","odio"],["valiente","cobarde"],["áspero","suave"],["siempre","nunca"],["grueso","delgado"],["generoso","egoísta"]]};
+
+/* detect structure: paragraphs, gists, roles */
+C.detect={
+en:[{r:["Question","Explanation","Example","Conclusion"],
+     p:["Cats purr when they are happy, yet they also purr when they are hurt or afraid. Why would one sound mean so many things?","Purring comes from rapid muscle movements in the throat, about twenty-five vibrations a second. The sound seems to comfort the cat itself, whatever it feels.","A mother cat purrs while nursing her kittens, and the kittens purr back to show they are safe and fed.","So a purr is less a message of joy and more a tool for calming and healing, which is why cats use it so often."],
+     g:["Why does one sound have many meanings?","A throat vibration that comforts the cat","Mother and kittens purr together","Purring is mainly for calming and healing"]},
+    {r:["Question","Explanation","Example","Conclusion"],
+     p:["Why do leaves turn red and gold in autumn? The answer is hiding in plain sight, inside every green leaf.","Green chlorophyll breaks down as days shorten, revealing yellow and orange pigments that were always there. Red pigments are made fresh as sugars become trapped in the leaf.","Maple trees in cold, sunny autumns often show the brightest red, since sunny days make more sugar and cool nights keep it trapped.","Autumn color is therefore the result of weather and chemistry working together, not simply the tree dying."],
+     g:["Why do leaves change color?","Chlorophyll fades and new pigments appear","Maples glow red after sunny days and cool nights","Autumn color comes from weather and chemistry"]},
+    {r:["Question","Explanation","Example","Conclusion"],
+     p:["Why is yawning so contagious that even reading about it can make you yawn?","Scientists believe yawning cools the brain and raises alertness, and that our brains copy the actions of others through social imitation.","Studies show people yawn more when a friend yawns than when a stranger does, and dogs sometimes yawn after their owners.","Yawning is probably both a body-cooling reflex and a quiet form of social connection."],
+     g:["Why is yawning contagious?","Yawning may cool the brain and spread by imitation","People catch friends' yawns more; dogs copy owners","Yawning is cooling and social connection"]}],
+es:[{r:["Pregunta","Explicación","Ejemplo","Conclusión"],
+     p:["Los gatos ronronean cuando están contentos, pero también cuando están heridos o asustados. ¿Por qué un solo sonido significaría tantas cosas?","El ronroneo nace de movimientos rápidos de los músculos de la garganta, unas veinticinco vibraciones por segundo. El sonido parece consolar al propio gato, sienta lo que sienta.","Una gata ronronea mientras amamanta a sus gatitos, y los gatitos ronronean de vuelta para mostrar que están seguros y alimentados.","Así, el ronroneo es menos un mensaje de alegría y más una herramienta para calmarse y sanar, por eso los gatos lo usan tanto."],
+     g:["¿Por qué un sonido tiene tantos significados?","Una vibración de garganta que consuela al gato","Madre y gatitos ronronean juntos","Ronronear sirve sobre todo para calmar y sanar"]},
+    {r:["Pregunta","Explicación","Ejemplo","Conclusión"],
+     p:["¿Por qué las hojas se vuelven rojas y doradas en otoño? La respuesta está a la vista, dentro de cada hoja verde.","La clorofila verde se degrada cuando los días se acortan y deja ver pigmentos amarillos y naranjas que siempre estuvieron ahí. Los pigmentos rojos se fabrican de nuevo cuando los azúcares quedan atrapados en la hoja.","Los arces de otoños fríos y soleados suelen mostrar el rojo más vivo, pues los días de sol producen más azúcar y las noches frescas la retienen.","El color del otoño es, por tanto, el resultado del clima y la química trabajando juntos, no solo del árbol que muere."],
+     g:["¿Por qué cambian de color las hojas?","La clorofila se apaga y aparecen otros pigmentos","Los arces brillan tras días soleados y noches frescas","El color del otoño nace del clima y la química"]},
+    {r:["Pregunta","Explicación","Ejemplo","Conclusión"],
+     p:["¿Por qué el bostezo es tan contagioso que hasta leer sobre él puede hacerte bostezar?","Los científicos creen que bostezar enfría el cerebro y aumenta la alerta, y que nuestro cerebro copia las acciones de otros por imitación social.","Los estudios muestran que la gente bosteza más cuando bosteza un amigo que cuando lo hace un extraño, y los perros a veces bostezan tras sus dueños.","Bostezar es probablemente un reflejo que enfría el cuerpo y también una forma silenciosa de conexión social."],
+     g:["¿Por qué es contagioso el bostezo?","Quizá enfría el cerebro y se propaga por imitación","Se contagia más entre amigos; los perros copian","Bostezar enfría y conecta socialmente"]}]};
+
+/* complete the story: start, then steps [correct, wrong, wrong] */
+C.story={
+en:[{s:"Mia found an old key in the garden, half buried under the roots of the oak tree.",st:[["She brushed off the dirt and noticed a tiny number carved into the metal.","The weather forecast said it would rain on Thursday.","Oak trees are among the oldest trees in the world."],["That night she searched the house for a lock that matched the number.","She bought three loaves of bread and a bag of oranges.","The key was made of iron, which rusts when wet."]]},
+    {s:"The power went out just as Daniel began to cook dinner for his guests.",st:[["He lit a few candles and decided to turn the meal into something simpler.","Electric power is generated in plants that burn coal or use water.","His guests were born in different cities across the country."],["By the time everyone sat down, the candlelight made the small meal feel special.","Candles have been used for thousands of years in many cultures.","The power company announced a new price plan for next year."]]},
+    {s:"When the lighthouse keeper stopped sending reports, the harbor authority grew uneasy.",st:[["A small boat was sent out at dawn to find out why the signals had gone silent.","Lighthouses are built on rocks so they can be seen from far away.","The harbor authority had been created many decades earlier."],["The crew found the lamp still burning and the keeper asleep, exhausted after a three-day storm.","Storms are caused by differences in air pressure and temperature.","Boats are measured by their length and the weight they carry."]]}],
+es:[{s:"Mía encontró una llave vieja en el jardín, medio enterrada bajo las raíces del roble.",st:[["Sacudió la tierra y notó un pequeño número grabado en el metal.","El pronóstico decía que llovería el jueves.","Los robles están entre los árboles más antiguos del mundo."],["Esa noche recorrió la casa buscando una cerradura que coincidiera con el número.","Compró tres panes y una bolsa de naranjas.","La llave era de hierro, que se oxida con la humedad."]]},
+    {s:"Se fue la luz justo cuando Daniel empezaba a cocinar para sus invitados.",st:[["Encendió unas velas y decidió convertir la comida en algo más sencillo.","La electricidad se genera en plantas que queman carbón o usan agua.","Sus invitados nacieron en distintas ciudades del país."],["Cuando todos se sentaron, la luz de las velas hizo que la pequeña cena se sintiera especial.","Las velas se usan desde hace miles de años en muchas culturas.","La compañía eléctrica anunció un nuevo plan de precios para el próximo año."]]},
+    {s:"Cuando el farero dejó de enviar informes, la autoridad del puerto empezó a inquietarse.",st:[["Al amanecer enviaron un bote pequeño para saber por qué las señales se habían callado.","Los faros se construyen sobre rocas para verse desde lejos.","La autoridad del puerto se había creado décadas antes."],["La tripulación halló la lámpara encendida y al farero dormido, agotado tras una tormenta de tres días.","Las tormentas se deben a diferencias de presión y temperatura del aire.","Los botes se miden por su largo y el peso que cargan."]]}]};
+
+/* order sentences: correct order */
+C.order={
+en:[["The baker wakes before sunrise.","She mixes flour, water and salt into a soft dough.","The dough rests while the oven heats up.","Then the loaves go inside and bake until golden.","By morning the street smells of fresh bread."],
+    ["Every plant needs light, water and air to grow.","Leaves capture sunlight and turn it into food.","Roots pull water and minerals from the soil.","The plant stores extra energy in its stems and seeds.","This is why a seed can wait years and still sprout."],
+    ["Trust takes months to build and a moment to lose.","Small promises kept every day are its foundation.","When one is broken, people begin to doubt the rest.","Repairing it demands honesty, patience and visible change.","In the end, trust is earned through behavior, never demanded."]],
+es:[["La panadera se levanta antes del amanecer.","Mezcla harina, agua y sal hasta formar una masa suave.","La masa reposa mientras el horno se calienta.","Luego los panes entran al horno y se hornean hasta dorarse.","Por la mañana la calle huele a pan fresco."],
+    ["Toda planta necesita luz, agua y aire para crecer.","Las hojas captan la luz del sol y la convierten en alimento.","Las raíces toman agua y minerales del suelo.","La planta guarda el exceso de energía en tallos y semillas.","Por eso una semilla puede esperar años y aun así brotar."],
+    ["La confianza tarda meses en construirse y un instante en perderse.","Las pequeñas promesas cumplidas cada día son su base.","Cuando una se rompe, la gente empieza a dudar de las demás.","Repararla exige honestidad, paciencia y cambios visibles.","Al final, la confianza se gana con hechos y nunca se exige."]]};
+
+/* pronouns: passage with [[pronoun]] markers; questions: [marked word, correct, wrong, wrong] */
+C.who={
+en:[{t:"Anna gave her brother a book because [[he]] had lost his own. He thanked her and promised to take care of [[it]].",
+     q:[["he","her brother","Anna","the book"],["it","the book","her brother","his own promise"]]},
+    {t:"The engineers tested the bridge after the storm. [[They]] found that [[it]] had held up well, although some of the bolts were loose.",
+     q:[["They","The engineers","The bolts","The storm"],["it","the bridge","the storm","the test"]]},
+    {t:"When the council met the farmers, the mayor told [[them]] that this would not be the last meeting, [[which]] pleased those who had traveled far.",
+     q:[["them","the farmers","the council","the mayor"],["which","that it was not the last meeting","the council","the farmers' journey"]]}],
+es:[{t:"Ana le dio un libro a su hermano porque [[él]] había perdido el suyo. Él le agradeció y prometió cuidar[[lo]].",
+     q:[["él","su hermano","Ana","el libro"],["lo","el libro","su hermano","su promesa"]]},
+    {t:"Los ingenieros probaron el puente tras la tormenta. [[Ellos]] comprobaron que [[había resistido]] bien, aunque algunos pernos estaban flojos.",
+     q:[["Ellos","Los ingenieros","Los pernos","La tormenta"],["había resistido","el puente","la tormenta","la prueba"]]},
+    {t:"Cuando el consejo se reunió con los agricultores, el alcalde [[les]] dijo que esta no sería la última reunión, [[lo cual]] alegró a quienes habían viajado lejos.",
+     q:[["les","los agricultores","el consejo","el alcalde"],["lo cual","que no sería la última reunión","el consejo","el viaje de los agricultores"]]}]};
+
+/* mind map: text, branches [name, chips...] */
+C.mind={
+en:[{t:"The octopus is a soft-bodied sea animal with eight arms covered in suckers. It lives in rocky dens on the ocean floor and hunts crabs and fish at night. It can change color in a second to hide from enemies, and when frightened it squirts a cloud of dark ink.",
+     b:[["Body","eight arms","suckers","soft body"],["Home","rocky dens","ocean floor"],["Food","crabs","fish"],["Defense","changes color","dark ink"]]},
+    {t:"The giraffe is the tallest land animal, reaching up to five meters. Its long neck lets it eat leaves from the tops of acacia trees on the African savanna. It sleeps only a few minutes at a time, and its spotted coat helps it blend into the dappled light.",
+     b:[["Size","tallest land animal","five meters"],["Home","African savanna","acacia trees"],["Food","leaves","tree tops"],["Rest and coat","sleeps minutes","spotted coat"]]},
+    {t:"Water evaporates from oceans and lakes when the sun heats it. The vapor rises, cools, and condenses into clouds. When the droplets grow heavy they fall as rain or snow, and the water flows back through rivers to the sea.",
+     b:[["Evaporation","sun heats","oceans and lakes"],["Condensation","vapor rises","clouds"],["Precipitation","rain or snow","heavy droplets"],["Return","rivers","back to the sea"]]}],
+es:[{t:"El pulpo es un animal marino de cuerpo blando con ocho brazos cubiertos de ventosas. Vive en cuevas rocosas del fondo del mar y caza cangrejos y peces de noche. Puede cambiar de color en un segundo para esconderse de sus enemigos y, si se asusta, lanza una nube de tinta oscura.",
+     b:[["Cuerpo","ocho brazos","ventosas","cuerpo blando"],["Hogar","cuevas rocosas","fondo del mar"],["Comida","cangrejos","peces"],["Defensa","cambia de color","tinta oscura"]]},
+    {t:"La jirafa es el animal terrestre más alto y llega a cinco metros. Su largo cuello le permite comer hojas de la copa de las acacias en la sabana africana. Duerme solo unos minutos seguidos y su pelaje manchado la ayuda a confundirse con la luz entre los árboles.",
+     b:[["Tamaño","animal más alto","cinco metros"],["Hogar","sabana africana","acacias"],["Comida","hojas","copas de árboles"],["Descanso y pelaje","duerme minutos","pelaje manchado"]]},
+    {t:"El agua se evapora de océanos y lagos cuando el sol la calienta. El vapor sube, se enfría y se condensa en nubes. Cuando las gotas se hacen pesadas caen como lluvia o nieve, y el agua vuelve por los ríos hacia el mar.",
+     b:[["Evaporación","el sol calienta","océanos y lagos"],["Condensación","el vapor sube","nubes"],["Precipitación","lluvia o nieve","gotas pesadas"],["Regreso","ríos","de vuelta al mar"]]}]};
+
+/* UI words that change with language */
+C.ui={
+en:{count:"How many words start with the letter",pairs:"How many pairs were identical?",diff:"How many rows had a different word?",find:"Find",synQ:"Find the synonym of",antQ:"Find the opposite of",tapword:"Tap a word, then tap its group.",typed:"Type the meaning of each root.",rangeFeedback:"If you could not take in the whole row, repeat. If you saw every word, move up a level.",range:"You handled lines of about",chars:"characters",firstTry:"first try",write:"Now write your own ending. Try two or three different ones."},
+es:{count:"¿Cuántas palabras empiezan con la letra",pairs:"¿Cuántos pares eran idénticos?",diff:"¿En cuántas filas había una palabra distinta?",find:"Busque",synQ:"Busque el sinónimo de",antQ:"Busque el antónimo de",tapword:"Toque una palabra y luego su grupo.",typed:"Escriba el significado de cada raíz.",rangeFeedback:"Si no alcanzó a captar toda la fila, repita. Si vio todas las palabras, suba de nivel.",range:"Maneja líneas de unos",chars:"caracteres",firstTry:"al primer intento",write:"Ahora escriba su propio final. Pruebe dos o tres distintos."}};
+
+/* ===================== DRILLS FRAMEWORK ===================== */
+var LANG=store.get('lang','en');
+var W={en:{start:'Start',next:'Next',again:'Repeat',up:'Next level',score:'Score',done:'Done',lv:['Beginner','Intermediate','Advanced'],best:'Best',read:'Read it, then press Done',got:'I read it',ok:'Correct',bad:'Not quite',of:'of',tryup:'Strong result. Try the next level.',tryagain:'Repeat this level until it feels easy.',ready:'Get ready',tapDiff:'Tap every row where the two sides differ.',fin:'Finish',typeHere:'Type here',check:'Check',time:'Time',avg:'avg',seen:'Which did you see?',sec:'s',words:'words'},
+ es:{start:'Empezar',next:'Siguiente',again:'Repetir',up:'Siguiente nivel',score:'Puntaje',done:'Listo',lv:['Principiante','Intermedio','Avanzado'],best:'Mejor',read:'Lea y luego pulse Listo',got:'Ya leí',ok:'Correcto',bad:'Casi',of:'de',tryup:'Buen resultado. Pruebe el siguiente nivel.',tryagain:'Repita este nivel hasta que le resulte fácil.',ready:'Prepárese',tapDiff:'Toque cada fila donde los dos lados sean distintos.',fin:'Terminar',typeHere:'Escriba aquí',check:'Comprobar',time:'Tiempo',avg:'prom.',seen:'¿Cuál vio?',sec:'s',words:'palabras'}};
+function w(k){return W[LANG][k];}
+function X(k){return C[k][LANG];}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,'').trim();}
+function pick(a){return a[rand(a.length)];}
+function sample(a,n){return shuffle(a.slice()).slice(0,n);}
+
+/* drill catalog */
+var DT={
+ bee:{c:'eyes',t:{en:'Follow the bee',es:'Siga a la abeja'},d:{en:'Track a bee with your eyes only and count the letter A it carries.',es:'Siga a la abeja solo con los ojos y cuente cuántas veces lleva la letra A.'},ic:'eye'},
+ fijacR:{c:'eyes',t:{en:'Fixation rhythm',es:'Fijaciones al ritmo'},d:{en:'Jump from dot to dot along each line to a steady beat.',es:'Salte de punto en punto a lo largo de cada línea, al ritmo.'},ic:'dots'},
+ fijacV:{c:'eyes',t:{en:'Vertical fixations',es:'Fijaciones verticales'},d:{en:'Move down each column, one fixation per dot.',es:'Baje por cada columna, una fijación por punto.'},ic:'dotsv'},
+ abajo:{c:'eyes',t:{en:'Down the column',es:'Hacia abajo'},d:{en:'Words appear one under another. Keep your gaze on the centre line.',es:'Las palabras aparecen una bajo otra. Mantenga la mirada en la línea central.'},ic:'down'},
+ bola:{c:'eyes',t:{en:'Ball pacer',es:'Pelota guía'},d:{en:'A ball sweeps across the text. Read ahead of it, never behind.',es:'Una pelota recorre el texto. Lea con ella, nunca detrás.'},ic:'ball'},
+ ampli1:{c:'range',t:{en:'Range: words',es:'Ampliación: palabras'},d:{en:'Words and phrases get wider. How wide can you read in one glance?',es:'Palabras y frases cada vez más anchas. ¿Qué tan ancho lee de una mirada?'},ic:'wide'},
+ ampliC2F1:{c:'range',t:{en:'Range: text lines',es:'Ampliación: líneas de texto'},d:{en:'A line of real text flashes. Pick the line you saw.',es:'Una línea de texto real aparece un instante. Elija la que vio.'},ic:'wide'},
+ capte:{c:'range',t:{en:'Capture',es:'Captación'},d:{en:'A row of words flashes. Answer a question about it.',es:'Aparece una fila de palabras. Responda una pregunta sobre ella.'},ic:'bolt'},
+ visual1:{c:'range',t:{en:'Number flash',es:'Números al instante'},d:{en:'Numbers flash for half a second. Choose the one you saw.',es:'Números por medio segundo. Elija el que vio.'},ic:'num'},
+ visualC2F1:{c:'range',t:{en:'Pairs',es:'Pares'},d:{en:'Rows of pairs flash. Count how many pairs were identical.',es:'Filas de pares. Cuente cuántos pares eran idénticos.'},ic:'pairs'},
+ visualC2F3:{c:'range',t:{en:'Slit reading',es:'Lectura por ranura'},d:{en:'One line at a time through a slit, then questions.',es:'Una línea a la vez por una ranura, luego preguntas.'},ic:'slit'},
+ recono1:{c:'range',t:{en:'Recognition',es:'Reconocimiento'},d:{en:'A word flashes. Pick it from look-alikes.',es:'Una palabra aparece un instante. Elíjala entre parecidas.'},ic:'eye'},
+ reconoC2F1:{c:'range',t:{en:'Phrase recognition',es:'Reconocer frases'},d:{en:'A phrase flashes. Pick it from near copies.',es:'Una frase aparece un instante. Elíjala entre copias parecidas.'},ic:'eye'},
+ dif1:{c:'scan',t:{en:'Spot the difference: words',es:'Diferencias: palabras'},d:{en:'Compare two columns and tap the rows that differ.',es:'Compare dos columnas y toque las filas distintas.'},ic:'diff'},
+ difC2F1:{c:'scan',t:{en:'Spot the difference: phrases',es:'Diferencias: frases'},d:{en:'Same idea with short phrases.',es:'Lo mismo con frases cortas.'},ic:'diff'},
+ difer:{c:'scan',t:{en:'Spot the difference: numbers',es:'Diferencias: números'},d:{en:'Same idea with number strings.',es:'Lo mismo con cadenas de números.'},ic:'diff'},
+ rastreo:{c:'scan',t:{en:'Scanning',es:'Rastreo'},d:{en:'Find the target word in a grid as fast as you can.',es:'Encuentre la palabra objetivo en una cuadrícula lo más rápido posible.'},ic:'search'},
+ vertical:{c:'speed',t:{en:'Narrow column reading',es:'Lectura vertical'},d:{en:'Read a thin column down the middle, then answer questions.',es:'Lea una columna delgada por el centro y responda preguntas.'},ic:'col'},
+ idea:{c:'speed',t:{en:'Read and get the idea',es:'Lea y capte la idea'},d:{en:'Read against the clock, then answer detail and main-idea questions.',es:'Lea contra el reloj y responda sobre detalles e idea principal.'},ic:'book'},
+ complete:{c:'comp',t:{en:'Read fast, then complete',es:'Lea rápido y complete'},d:{en:'A sentence shows briefly with its key words highlighted. Then it returns with blanks. Pick the missing words.',es:'Una frase aparece un instante con sus palabras clave resaltadas. Luego vuelve con huecos. Elija las palabras que faltan.'},ic:'blank'},
+ clasif:{c:'comp',t:{en:'Classify',es:'Clasificar'},d:{en:'Sort words into their groups.',es:'Ordene las palabras en sus grupos.'},ic:'group'},
+ detecte:{c:'comp',t:{en:'Detect the structure',es:'Detecte la estructura'},d:{en:'Label the role of each paragraph.',es:'Indique la función de cada párrafo.'},ic:'struct'},
+ histo:{c:'comp',t:{en:'Continue the story',es:'Continúe la historia'},d:{en:'Pick what logically comes next, then write your own ending.',es:'Elija lo que sigue con lógica y luego escriba su final.'},ic:'story'},
+ ordene:{c:'comp',t:{en:'Put in order',es:'Ordene las frases'},d:{en:'Tap the sentences in the right order.',es:'Toque las frases en el orden correcto.'},ic:'list'},
+ quien:{c:'comp',t:{en:'Who or what?',es:'¿Quién o qué?'},d:{en:'Say what each highlighted word refers to.',es:'Diga a qué se refiere cada palabra resaltada.'},ic:'who'},
+ mapam:{c:'comp',t:{en:'Mind map',es:'Mapa mental'},d:{en:'Read a short text, then rebuild its map from memory.',es:'Lea un texto breve y reconstruya su mapa de memoria.'},ic:'map'},
+ horario:{c:'comp',t:{en:'Schedule memory',es:'Memoria de horario'},d:{en:'Study a day plan briefly, then answer questions.',es:'Estudie un plan del día un momento y responda preguntas.'},ic:'clock'},
+ semej:{c:'vocab',t:{en:'Synonyms and opposites',es:'Sinónimos y antónimos'},d:{en:'Quickly find the word that matches or opposes.',es:'Encuentre rápido la palabra equivalente u opuesta.'},ic:'swap'},
+ deriva:{c:'vocab',t:{en:'Word roots',es:'Raíces de palabras'},d:{en:'Learn root words and recall their meaning.',es:'Aprenda raíces y recuerde su significado.'},ic:'root'}
+};
+var CATS=[
+ {k:'eyes',t:{en:'Eye training',es:'Entrenamiento visual'},ids:['s-warm','bee','fijacR','fijacV','abajo','bola']},
+ {k:'range',t:{en:'Reading range',es:'Amplitud de lectura'},ids:['s-schulte','s-flash','ampli1','ampliC2F1','capte','visual1','visualC2F1','visualC2F3','recono1','reconoC2F1']},
+ {k:'scan',t:{en:'Attention and scanning',es:'Atención y rastreo'},ids:['dif1','difC2F1','difer','rastreo']},
+ {k:'speed',t:{en:'Speed reading',es:'Lectura veloz'},ids:['s-col','s-flow','vertical','idea','s-test']},
+ {k:'comp',t:{en:'Comprehension',es:'Comprensión'},ids:['complete','clasif','detecte','histo','ordene','quien','mapam','horario']},
+ {k:'vocab',t:{en:'Vocabulary',es:'Vocabulario'},ids:['semej','deriva']}
+];
+var OLD={'s-warm':{t:{en:'Eye warm-up',es:'Calentamiento visual'},d:{en:'Follow a moving dot, then jump between targets',es:'Siga un punto y luego salte entre objetivos'},ic:'eye'},
+ 's-schulte':{t:{en:'Schulte table',es:'Tabla de Schulte'},d:{en:'Find 1 to 25 without moving your eyes',es:'Encuentre del 1 al 25 sin mover los ojos'},ic:'grid'},
+ 's-flash':{t:{en:'Word flash',es:'Palabras al instante'},d:{en:'Take in a whole phrase in one glance',es:'Capte una frase completa de una mirada'},ic:'bolt'},
+ 's-col':{t:{en:'Column drill',es:'Lectura en columna'},d:{en:'Read down the middle, fewer eye stops per line',es:'Lea por el centro con menos paradas por línea'},ic:'col'},
+ 's-flow':{t:{en:'Word flow',es:'Flujo de palabras'},d:{en:'One word at a time, optional speed ramp',es:'Una palabra a la vez, con aceleración opcional'},ic:'flow'},
+ 's-test':{t:{en:'Speed test',es:'Prueba de velocidad'},d:{en:'Words per minute plus a comprehension check',es:'Palabras por minuto y control de comprensión'},ic:'timer'}};
+var ICS={
+ eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ grid:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>',
+ bolt:'<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
+ col:'<path d="M8 4v16M16 4v16"/>',
+ flow:'<path d="M4 7h10M4 12h16M4 17h7"/>',
+ timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 3h6"/>',
+ dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+ dotsv:'<circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>',
+ down:'<path d="M12 4v16M6 14l6 6 6-6"/>',
+ ball:'<circle cx="12" cy="12" r="5"/><path d="M3 12h2M19 12h2"/>',
+ wide:'<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>',
+ num:'<path d="M5 9h14M5 15h14M10 4L8 20M16 4l-2 16"/>',
+ pairs:'<rect x="3" y="6" width="7" height="12" rx="1"/><rect x="14" y="6" width="7" height="12" rx="1"/>',
+ slit:'<path d="M3 8h18M3 16h18"/><path d="M3 12h18" stroke-dasharray="2 3"/>',
+ diff:'<path d="M4 8h6M14 8h6M4 16h6M14 16h6M12 4v16"/>',
+ search:'<circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/>',
+ book:'<path d="M5 4h13a1 1 0 0 1 1 1v13H6.5A1.5 1.5 0 0 0 5 19.5z"/>',
+ blank:'<path d="M4 9h5M13 9h7M4 15h16M9 12v-6"/>',
+ group:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>',
+ struct:'<path d="M4 6h16M4 11h10M4 16h13M4 21h8"/>',
+ story:'<path d="M4 5h16v11H9l-5 4z"/>',
+ list:'<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+ who:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/>',
+ map:'<circle cx="12" cy="12" r="3"/><path d="M12 9V3M15 12h6M12 15v6M9 12H3"/>',
+ clock:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+ swap:'<path d="M5 8h14l-4-4M19 16H5l4 4"/>',
+ root:'<path d="M12 3v10M12 13c-3 0-5 2-5 6M12 13c3 0 5 2 5 6M12 8c-2 0-3-1-4-2M12 8c2 0 3-1 4-2"/>'
+};
+function icon(k){return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICS[k]||ICS.eye)+'</svg>';}
+
+/* progress */
+var prog=store.get('dp',{});
+function bestOf(id){var p=prog[id];return p?p.best:null;}
+function saveProg(id,pct){var p=prog[id]||{n:0,best:0};p.n++;p.best=Math.max(p.best,pct);prog[id]=p;store.set('dp',prog);}
+
+/* hub */
+function renderHub(){
+  var h='';
+  CATS.forEach(function(c){
+    h+='<div class="label" style="padding:22px 0 4px">'+esc(c.t[LANG])+'</div><div class="list">';
+    c.ids.forEach(function(id){
+      var o=OLD[id],d=DT[id],m=o||d,go=o?id:'s-drill',bst=!o?bestOf(id):null;
+      h+='<button class="row" data-go="'+go+'"'+(o?'':' data-drill="'+id+'"')+'><span class="ic">'+icon(m.ic)+'</span><span class="tx"><b>'+esc(m.t[LANG])+'</b><span>'+esc(m.d[LANG])+'</span></span><span class="tm">'+(bst!=null?bst+'%':(o?(id==='s-warm'?2:3):budgetOf(id)/60)+' min')+'</span></button>';
+    });
+    h+='</div>';
+  });
+  var APP=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.speedrr),bm=document.querySelector('meta[name=build]');
+  if(APP)h+='<div class="pfoot" style="flex-direction:column;align-items:center;gap:8px"><button class="btn" id="chk-up">'+(LANG==='en'?'Check for updates':'Buscar actualizaciones')+'</button><span class="sub">Build '+(bm?bm.content:'')+'</span></div>';
+  $('hub-list').innerHTML=h;
+  $('lang-en').setAttribute('aria-pressed',String(LANG==='en'));
+  $('lang-es').setAttribute('aria-pressed',String(LANG==='es'));
+}
+document.addEventListener('click',function(e){
+  var r=e.target.closest('[data-drill]');
+  if(r){dr.id=r.dataset.drill;dr.lvl=store.get('lv_'+dr.id,0);dr.from='s-hub';dr.node=null;}
+  var oh=e.target.closest('.row[data-go]');
+  if(oh&&OLD[oh.dataset.go]){var bk2=document.querySelector('#'+oh.dataset.go+' .back');if(bk2)bk2.dataset.go='s-hub';pendingOld=null;}
+},true);
+enter['s-hub']=renderHub;
+document.addEventListener('click',function(e){if(e.target.id==='chk-up'){try{window.webkit.messageHandlers.speedrr.postMessage('update');}catch(x){}}});
+$('lang-en').onclick=function(){LANG='en';store.set('lang',LANG);renderHub();};
+$('lang-es').onclick=function(){LANG='es';store.set('lang',LANG);renderHub();};
+
+/* drill runtime */
+var dr={id:null,lvl:0,timers:[],raf:0,runs:{}};
+function dClear(){dr.timers.forEach(clearTimeout);dr.timers=[];cancelAnimationFrame(dr.raf);}
+function later(fn,ms){var t=setTimeout(fn,ms);dr.timers.push(t);return t;}
+function put(h){var b=$('dr-body');b.innerHTML=h;return b;}
+function lvTitle(){var d=DT[dr.id];$('dr-title').textContent=d.t[LANG];$('dr-sub').textContent=w('lv')[dr.lvl];
+  $('dr-lv').innerHTML=w('lv').map(function(n,i){return '<button class="chip" data-v="'+i+'" aria-pressed="'+(i===dr.lvl)+'">'+esc(n)+'</button>';}).join('');}
+enter['s-drill']=function(){intro();};
+leave['s-drill']=function(){dClear();dStop();};
+$('dr-lv').onclick=function(e){var c=e.target.closest('.chip');if(!c)return;dClear();dr.lvl=+c.dataset.v;store.set('lv_'+dr.id,dr.lvl);intro();};
+function intro(){
+  dClear();dStop();dr.spd=store.get('sp_'+dr.id,1);lvTitle();$('dr-back').dataset.go=dr.from||'s-hub';if(dr.node)$('dr-lv').style.display='none';else $('dr-lv').style.display='';var d=DT[dr.id],b=bestOf(dr.id);
+  put('<div class="dintro"><p class="dtxt">'+esc(d.d[LANG])+'</p><p class="sub">'+(LANG==='en'?'About ':'Unos ')+Math.round(budgetOf(dr.id)/60*10)/10+' min</p>'+(b!=null?'<p class="sub">'+w('best')+': '+b+'%</p>':'')+(SPEEDY[dr.id]?'<div class="spd"><span>'+(LANG==='en'?'Speed':'Velocidad')+'</span><button class="chip" id="sp-m" aria-label="'+(LANG==='en'?'Slower':'Más lento')+'">−</button><b id="sp-v"></b><button class="chip" id="sp-p" aria-label="'+(LANG==='en'?'Faster':'Más rápido')+'">+</button></div><p class="sub">'+(LANG==='en'?'Higher is faster and harder. Pick a speed where you get about 80% right.':'Más alto es más rápido y difícil. Elija una velocidad en la que acierte cerca del 80%.')+'</p>':'')+'<div class="actions"><button class="btn solid" id="dr-go">'+w('start')+'</button></div></div>');
+  if(SPEEDY[dr.id]){var spv=function(){$('sp-v').textContent=dr.spd.toFixed(2).replace(/0$/,'')+'×';};spv();var ix=function(){return SPS.indexOf(dr.spd)<0?2:SPS.indexOf(dr.spd);};$('sp-m').onclick=function(){dr.spd=SPS[Math.max(0,ix()-1)];store.set('sp_'+dr.id,dr.spd);spv();};$('sp-p').onclick=function(){dr.spd=SPS[Math.min(SPS.length-1,ix()+1)];store.set('sp_'+dr.id,dr.spd);spv();};}
+  $('dr-go').onclick=function(){dr.ok=0;dr.total=0;dr.round=0;dr.t0=Date.now();dr.budget=budgetOf(dr.id)*1000;$('dr-lv').style.display='none';dTick();dr.iv=setInterval(dTick,500);RUN[dr.id](dr.lvl);};
+}
+function end(ok,total,note){
+  if(dr.budget&&Date.now()-dr.t0<dr.budget&&dr.iv){dr.round++;RUN[dr.id](dr.lvl);return;}
+  dClear();dStop();var pct=total?Math.round(100*ok/total):0;saveProg(dr.id,pct);
+  var node=dr.node,st=0;if(node){st=award(node,pct,pct>=100?15:10);}else if(pct>=70){xp+=5;store.set('xp',xp);bumpStreak();}
+  var up=pct>=80&&dr.lvl<2&&!node;
+  var starH=node?(st?'<div class="stars big2">'+'★'.repeat(st)+'<i>'+'★'.repeat(3-st)+'</i></div>':''):'';
+  var msg=node?(st?(LANG==='en'?'Lesson complete! +'+(pct>=100?15:10)+' XP.':'¡Lección completada! +'+(pct>=100?15:10)+' XP.'):(LANG==='en'?'You need 70% to pass. Try again.':'Necesita 70% para aprobar. Inténtelo de nuevo.')):(up?w('tryup'):w('tryagain'));
+  put('<div class="dres"><div class="label">'+w('score')+'</div>'+starH+'<div class="big">'+ok+' '+w('of')+' '+total+'</div><p class="dtxt">'+(note?esc(note)+' ':'')+msg+'</p><div class="actions"><button class="btn" id="dr-again">'+w('again')+'</button>'+(node?'<button class="btn solid" id="dr-cont" data-go="'+(dr.from||'s-path')+'">'+pt('cont')+'</button>':(dr.lvl<2?'<button class="btn solid" id="dr-up">'+w('up')+'</button>':''))+'</div></div>');
+  $('dr-again').onclick=intro;
+  var u=$('dr-up');if(u)u.onclick=function(){dr.lvl=Math.min(2,dr.lvl+1);store.set('lv_'+dr.id,dr.lvl);intro();};
+}
+/* multiple choice: opts[0] is correct */
+function mcq(q,options,cb,extra){
+  var idx=shuffle(options.map(function(_,i){return i;}));
+  var h=(extra||'')+'<div class="qq">'+q+'</div><div class="opts">'+idx.map(function(i){return '<button class="opt" data-i="'+i+'">'+esc(options[i])+'</button>';}).join('')+'</div>';
+  put(h);
+  $('dr-body').querySelector('.opts').onclick=function(e){
+    var b=e.target.closest('.opt');if(!b)return;
+    var ok=b.dataset.i==='0';
+    this.querySelectorAll('.opt').forEach(function(x){x.disabled=true;if(x.dataset.i==='0')x.classList.add('good');});
+    if(!ok)b.classList.add('bad');
+    dr.total++;if(ok)dr.ok++;
+    later(function(){cb(ok);},ok?450:1100);
+  };
+}
+function quiz(items,done,extra){ /* items: [q, optionsWithCorrectFirst] */
+  var i=0;(function step(){
+    if(i>=items.length){done();return;}
+    var it=items[i++];mcq(esc(it[0]),it[1],step,extra);
+  })();
+}
+function splitText(t){var s=String(t),n=s.length,i;
+  if(n<=1)return ['',s];
+  var sp=[];for(i=0;i<n;i++)if(s.charAt(i)===' ')sp.push(i);
+  if(sp.length){var best=sp[0];sp.forEach(function(p){if(Math.abs(p-n/2)<Math.abs(best-n/2))best=p;});return [s.slice(0,best),s.slice(best+1)];}
+  var m=Math.ceil(n/2);return [s.slice(0,m),s.slice(m)];}
+function redParts(t){var s=String(t),n=s.length,i=Math.floor(n/2),j=i,k;
+  if(s.charAt(i)===' '){for(k=1;k<n;k++){if(i-k>=0&&s.charAt(i-k)!==' '){j=i-k;break;}if(i+k<n&&s.charAt(i+k)!==' '){j=i+k;break;}}}
+  return [s.slice(0,j),s.charAt(j),s.slice(j+1)];}
+function dotLine(t,hid,cls){var p=redParts(t),fs=Math.max(13,Math.min(26,Math.floor(340/(Math.max(t.length,8)*.55)))),c='fw'+(cls||'')+' tx'+(hid?' hid':'');
+  return '<div class="fline rl" style="font-size:'+fs+'px"><span class="'+c+' l">'+p[0]+'</span><span class="'+c+' rc">'+p[1]+'</span><span class="'+c+' r">'+p[2]+'</span></div>';}
+function flashBox(html,ms,next,cls){
+  var m=/^<span class="fw( num)?">([\s\S]*)<\/span>$/.exec(html);
+  if(m)put('<div class="fbox" aria-live="polite">'+dotLine(m[2],true,m[1]||'')+'</div>');
+  else put('<div class="fbox '+(cls||'')+'" aria-live="polite"><div class="pwrap"><div class="fcont hid" id="fcont">'+html+'</div><i class="fixdot pabs tx hid"></i></div></div>');
+  var els=document.querySelectorAll('#dr-body .tx'),fc=$('fcont');
+  function setHid(on){for(var i=0;i<els.length;i++)els[i].classList.toggle('hid',on);if(fc)fc.classList.toggle('hid',on);}
+  later(function(){setHid(false);later(function(){setHid(true);later(next,250);},ms);},600);
+}
+function countdown(next){
+  var n=3;(function t(){put('<div class="fbox"><span class="big">'+(n||'')+'</span></div>');if(n--<=0){next();return;}later(t,500);})();
+}
+function mutate(s){ /* change one character */
+  var a=s.split(''),ix=[];a.forEach(function(c,i){if(/[a-zA-Z0-9áéíóúñ]/.test(c))ix.push(i);});
+  var i=pick(ix),c=a[i],pool=/[0-9]/.test(c)?'0123456789':'abcdefghilmnoprstu';
+  var n=c;while(n===c)n=pick(pool.split(''));a[i]=n;return a.join('');
+}
+function wpmMs(text,wpm){return text.split(/\s+/).length*60000/wpm;}
+var RUN={};
+var SPS=[.5,.75,1,1.25,1.5,2];
+var SPEEDY={bee:1,fijacR:1,fijacV:1,abajo:1,bola:1,vertical:1,idea:1,visualC2F3:1,ampli1:1,ampliC2F1:1,capte:1,visual1:1,visualC2F1:1,recono1:1,reconoC2F1:1,dif1:1,difC2F1:1,difer:1,mapam:1,horario:1,complete:1};
+function SPD(){return dr.spd||1;}
+var BUDS={ordene:120,quien:120,horario:150,deriva:150};
+function budgetOf(id){return (BUDS[id]||180);}
+var DK={};
+function deckNext(name,arr){var k=name+LANG+arr.length;if(!DK[k]||!DK[k].length)DK[k]=shuffle(arr.map(function(_,i){return i;}));return arr[DK[k].pop()];}
+function dTick(){var left=Math.max(0,dr.budget-(Date.now()-dr.t0));$('dr-time').textContent=Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');}
+function dStop(){clearInterval(dr.iv);dr.iv=0;$('dr-time').textContent='';}
+
+/* ---- eye drills ---- */
+RUN.bee=function(L){
+  var steps=[14,16,20][L],gap=[1400,1000,700][L]/SPD(),i=0,A=0;
+  put('<div class="arena2" id="bee-ar"><div class="bee" id="bee">·</div></div><p class="hint">'+(LANG==='en'?'Move only your eyes. Count the A.':'Mueva solo los ojos. Cuente las A.')+'</p>');
+  (function go(){
+    if(i>=steps){
+      var opts=[A,A+1,Math.max(0,A-1),A+2].filter(function(v,ix,ar){return ar.indexOf(v)===ix;}).map(String);
+      mcq(LANG==='en'?'How many times did the bee carry an A?':'¿Cuántas veces llevó la abeja una A?',opts,function(){end(dr.ok,dr.total);});
+      return;
+    }
+    var l=Math.random()<.3?'A':pick(['B','C','E']);if(l==='A')A++;i++;
+    var b=$('bee');b.textContent=l;b.style.left=(8+Math.random()*78)+'%';b.style.top=(8+Math.random()*78)+'%';
+    later(go,gap);
+  })();
+};
+function fixation(vert){return function(L){
+  var k=[2,3,4][L],rows=6,ms=[900,700,520][L]/SPD(),cells=[],order=[],n=rows*k;
+  var h='<div class="fxg" style="grid-template-columns:repeat('+k+',1fr)">';
+  for(var r=0;r<rows;r++)for(var c=0;c<k;c++){h+='<div class="fx" id="fx'+r+'_'+c+'">·</div>';}
+  h+='</div><p class="hint">'+(LANG==='en'?'One fixation per dot. Notice the digit that appears.':'Una fijación por punto. Note el dígito que aparece.')+'</p>';
+  put(h);
+  if(vert){for(var c2=0;c2<k;c2++)for(var r2=0;r2<rows;r2++)order.push([r2,c2]);}
+  else{for(var r3=0;r3<rows;r3++)for(var c3=0;c3<k;c3++)order.push([r3,c3]);}
+  var tgt=3+rand(n-6),digit=1+rand(9),i=0,last=null;
+  (function go(){
+    if(last)last.classList.remove('on');
+    if(last)last.textContent='·';
+    if(i>=n){
+      var d=[digit],pool=shuffle([1,2,3,4,5,6,7,8,9].filter(function(x){return x!==digit;}));
+      d=d.concat(pool.slice(0,3)).map(String);
+      mcq(LANG==='en'?'Which digit appeared?':'¿Qué dígito apareció?',d,function(){end(dr.ok,dr.total);});return;
+    }
+    var el=$('fx'+order[i][0]+'_'+order[i][1]);el.classList.add('on');if(i===tgt)el.textContent=digit;last=el;i++;
+    later(go,ms);
+  })();
+};};
+RUN.fijacR=fixation(false);RUN.fijacV=fixation(true);
+RUN.abajo=function(L){
+  var ms=[800,600,420][L]/SPD(),n=[8,10,12][L],words=sample(X('short').filter(function(s){return s.length>3;}),n),i=0;
+  put('<div class="fbox"><span class="line"></span><div class="wd" id="wd"></div></div>');
+  (function go(){
+    if(i>=n){
+      var other=sample(X('short').filter(function(x){return words.indexOf(x)<0;}),3);
+      mcq(LANG==='en'?'Which of these words appeared?':'¿Cuál de estas palabras apareció?',[pick(words)].concat(other),function(){end(dr.ok,dr.total);});return;
+    }
+    $('wd').textContent=words[i];$('wd').style.transform='translateY('+((i-n/2)*24)+'px)';i++;later(go,ms);
+  })();
+};
+function textPacer(L,perLine,chunk,wpms,narrow,after){
+  var p=X('passages'),pas=pick(p),words=pas.t.split(/\s+/),wpm=wpms[L]*SPD(),lines=[],i;
+  for(i=0;i<words.length;i+=perLine)lines.push(words.slice(i,i+perLine));
+  var h='<div class="pacer'+(narrow?' narrow':'')+'" id="pc">';
+  var n=0;lines.forEach(function(l){h+='<div class="pl">';l.forEach(function(wd){h+='<span class="pw" data-n="'+(n++)+'">'+esc(wd)+'</span> ';});h+='</div>';});
+  h+='</div>';put(h);
+  var all=$('pc').querySelectorAll('.pw'),pos=0;
+  (function go(){
+    all.forEach(function(s){s.classList.remove('cur');});
+    if(pos>=all.length){later(function(){var it=pas.q.map(function(q){return [q[0],q.slice(1)];});quiz(it,function(){end(dr.ok,dr.total);});},300);return;}
+    for(var j=pos;j<Math.min(all.length,pos+chunk);j++)all[j].classList.add('cur');
+    all[pos].scrollIntoView({block:'center'});
+    var ms=chunk*60000/wpm;pos+=chunk;later(go,ms);
+  })();
+}
+RUN.bola=function(L){textPacer(L,99,[1,2,3][L],[200,300,400],false);};
+RUN.vertical=function(L){textPacer(L,[1,2,2][L]+1,[1,1,2][L]+0,[220,300,400],true);};
+RUN.idea=function(L){
+  var pas=deckNext('p',X('passages')),ms=wpmMs(pas.t,[220,320,450][L])/SPD();
+  put('<div class="ptxt" id="ptx">'+esc(pas.t)+'</div><div class="bar-t"><i id="bt"></i></div><div class="actions"><button class="btn solid" id="pdone">'+w('got')+'</button></div>');
+  var t0=Date.now();function fin(){dClear();var secs=(Date.now()-t0)/1000,wpm=Math.round(pas.t.split(/\s+/).length*60/secs);
+    quiz(pas.q.map(function(q){return [q[0],q.slice(1)];}),function(){end(dr.ok,dr.total,LANG==='en'?'You read at about '+wpm+' wpm.':'Leyó a unas '+wpm+' ppm.');});}
+  $('pdone').onclick=fin;$('bt').style.transition='width '+ms+'ms linear';requestAnimationFrame(function(){var b=$('bt');if(b)b.style.width='100%';});later(fin,ms*1.6);
+};
+RUN.visualC2F3=function(L){
+  var pas=deckNext('p',X('passages')),words=pas.t.split(/\s+/),per=[5,6,8][L],wpm=[250,350,500][L]*SPD(),lines=[];
+  for(var i=0;i<words.length;i+=per)lines.push(words.slice(i,i+per).join(' '));
+  var k=0;put('<div class="slit"><div class="slt" id="slt"></div></div>');
+  (function go(){
+    if(k>=lines.length){later(function(){quiz(pas.q.slice(0,2).map(function(q){return [q[0],q.slice(1)];}),function(){end(dr.ok,dr.total);});},300);return;}
+    $('slt').textContent=lines[k];var ms=lines[k].split(' ').length*60000/wpm;k++;later(go,ms);
+  })();
+};
+
+/* ---- range drills ---- */
+RUN.ampli1=function(L){
+  var rows=X('rangeWords'),row=rows[0].concat(rows[1],rows[2]),ms=[1000,650,380][L]/SPD(),i=0,errs=0,best=0;
+  countdown(function go(){
+    if(i>=row.length||errs>=2){end(dr.ok,Math.max(dr.total,1),(LANG==='en'?'Widest line read: ':'Línea más ancha leída: ')+best+' '+C.ui[LANG].chars+'.');return;}
+    var t=row[i];
+    flashBox('<span class="fw">'+esc(t)+'</span>',ms,function(){
+      var others=sample(row.filter(function(x,ix){return ix!==i&&Math.abs(x.length-t.length)<8;}),2);
+      mcq(w('seen'),[t].concat(others),function(ok){if(ok)best=Math.max(best,t.length);else errs++;i++;go();});
+    });
+  });
+};
+RUN.ampliC2F1=function(L){
+  var lines=X('rangeText')[L===0?0:1],ms=[1500,1100,800][L]/SPD(),seq=sample(lines,6),i=0;
+  countdown(function go(){
+    if(i>=seq.length){end(dr.ok,dr.total);return;}
+    var t=seq[i++];
+    flashBox('<span class="fw">'+esc(t)+'</span>',ms,function(){
+      var wrong=sample(lines.filter(function(x){return x!==t;}),1).concat([mutate(t)]);
+      mcq(w('seen'),[t].concat(wrong),go);
+    });
+  });
+};
+RUN.capte=function(L){
+  var n=[4,6,8][L],ms=[1600,1200,900][L]/SPD(),rounds=6,i=0,src=X('short');
+  countdown(function go(){
+    if(i++>=rounds){end(dr.ok,dr.total);return;}
+    var ws=sample(src,n),ltr=ws[rand(n)][0],c=ws.filter(function(x){return x[0]===ltr;}).length;
+    flashBox('<span class="fw">'+ws.map(esc).join('  ')+'</span>',ms,function(){
+      var o=[c,c+1,c+2,Math.max(0,c-1)].filter(function(v,ix,ar){return ar.indexOf(v)===ix;}).map(String);
+      mcq(C.ui[LANG].count+' “'+esc(ltr)+'”?',o,go);
+    });
+  });
+};
+RUN.visual1=function(L){
+  var len=[4,6,8][L],i=0;
+  countdown(function go(){
+    if(i++>=7){end(dr.ok,dr.total);return;}
+    var s='';for(var k=0;k<len;k++)s+=rand(10);
+    flashBox('<span class="fw num">'+s+'</span>',500/SPD(),function(){mcq(w('seen'),[s,mutate(s),mutate(s),mutate(s)].filter(function(v,ix,ar){return ar.indexOf(v)===ix;}),go);});
+  });
+};
+RUN.visualC2F1=function(L){
+  var src=L===0?X('short'):L===1?X('long'):null,i=0,ms=[2500,1800,1200][L]/SPD();
+  function mk(){if(src)return pick(src);var s='';for(var k=0;k<5;k++)s+=rand(10);return s;}
+  countdown(function go(){
+    if(i++>=5){end(dr.ok,dr.total);return;}
+    var same=0,rows=[];for(var r=0;r<6;r++){var a=mk(),b=a;if(Math.random()<.5)same++;else b=mutate(a);rows.push('<div class="prow"><span>'+esc(a)+'</span><span>'+esc(b)+'</span></div>');}
+    flashBox(rows.join(''),ms,function(){
+      var o=[same,same+1,Math.max(0,same-1),same+2].filter(function(v,ix,ar){return ar.indexOf(v)===ix;}).map(String);
+      mcq(C.ui[LANG].pairs,o,go);
+    },'pairs');
+  });
+};
+RUN.recono1=function(L){
+  var src=L===0?X('short'):L===1?X('long'):X('rangeWords')[1],ms=[600,420,280][L]/SPD(),i=0;
+  countdown(function go(){
+    if(i++>=8){end(dr.ok,dr.total);return;}
+    var t=pick(src);
+    flashBox('<span class="fw">'+esc(t)+'</span>',ms,function(){
+      var d=[t];while(d.length<4){var m=mutate(t);if(d.indexOf(m)<0)d.push(m);}
+      mcq(w('seen'),d,go);
+    });
+  });
+};
+RUN.reconoC2F1=function(L){
+  var src=X('rangeWords')[2],ms=[900,650,450][L]/SPD(),i=0;
+  countdown(function go(){
+    if(i++>=7){end(dr.ok,dr.total);return;}
+    var t=pick(src),o=sample(src.filter(function(x){return x!==t;}),1),m=mutate(t),ws=t.split(' ');ws[ws.length-1]=pick(src).split(' ').pop();
+    var alt=ws.join(' ');
+    flashBox('<span class="fw">'+esc(t)+'</span>',ms,function(){
+      var d=[t,m];if(alt!==t&&d.indexOf(alt)<0)d.push(alt);d=d.concat(o).filter(function(v,ix,ar){return ar.indexOf(v)===ix;}).slice(0,4);
+      mcq(w('seen'),d,go);
+    });
+  });
+};
+
+/* ---- scanning ---- */
+function diffRows(gen,secs){return function(L){
+  var rows=8,t=Math.round(secs[L]/SPD()),data=[],nd=0,h='<div class="dtop"><span id="dtm">'+t+'</span> '+w('sec')+'</div><p class="hint">'+w('tapDiff')+'</p><div class="drows">';
+  for(var r=0;r<rows;r++){var p=gen(L),d=Math.random()<.4;if(d){p[1]=mutate(p[0]);nd++;}data.push(d);h+='<button class="drow" data-r="'+r+'"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></button>';}
+  if(!nd){data[0]=true;nd=1;}
+  put(h+'</div><div class="actions"><button class="btn solid" id="dfin">'+w('fin')+'</button></div>');
+  var left=t;function finish(){dClear();var good=0,bad=0;document.querySelectorAll('.drow').forEach(function(b,ix){var on=b.classList.contains('sel');if(on&&data[ix])good++;else if(on)bad++;});dr.ok+=Math.max(0,good-bad);dr.total+=nd;end(dr.ok,dr.total);}
+  (function tick(){$('dtm').textContent=left;if(left--<=0){finish();return;}later(tick,1000);})();
+  document.querySelector('.drows').onclick=function(e){var b=e.target.closest('.drow');if(b)b.classList.toggle('sel');};
+  $('dfin').onclick=finish;
+};}
+RUN.dif1=diffRows(function(L){var w1=pick(X('short'));return [w1,w1];},[40,30,22]);
+RUN.difC2F1=diffRows(function(L){var p=pick(X('rangeWords')[L===0?1:2]);return [p,p];},[45,35,25]);
+RUN.difer=diffRows(function(L){var n=[6,8,10][L],s='';for(var i=0;i<n;i++)s+=rand(10);return [s,s];},[40,30,22]);
+RUN.rastreo=function(L){
+  var n=[12,20,30][L],rounds=5,i=0,times=[],src=X('short').concat(X('long'));
+  (function go(){
+    if(i++>=rounds){var avg=times.reduce(function(a,b){return a+b;},0)/times.length;end(dr.ok,dr.total,w('avg')+' '+avg.toFixed(1)+' '+w('sec')+'.');return;}
+    var t=pick(src),cells=[t],pool=src.filter(function(x){return x!==t;});
+    while(cells.length<n)cells.push(L===2&&Math.random()<.5?mutate(t):pick(pool));
+    cells=shuffle(cells);
+    put('<div class="tgt">'+w('find')+'<b>'+esc(t)+'</b></div><div class="sgrid">'+cells.map(function(c){return '<button class="sc" data-ok="'+(c===t?1:0)+'">'+esc(c)+'</button>';}).join('')+'</div>');
+    var t0=Date.now();
+    document.querySelector('.sgrid').onclick=function(e){var b=e.target.closest('.sc');if(!b)return;var ok=b.dataset.ok==='1';dr.total++;if(ok)dr.ok++;times.push((Date.now()-t0)/1000);b.classList.add(ok?'good':'bad');later(go,500);this.onclick=null;};
+  })();
+};
+W.en.find='Find: ';W.es.find='Busque: ';
+
+/* ---- comprehension ---- */
+RUN.complete=function(L){
+  var cp=[];[L-1,L,L+1].forEach(function(l){if(X('complete')[l])cp=cp.concat(X('complete')[l]);});
+  var items=[];for(var q=0;q<4;q++)items.push(deckNext('c'+L,cp));
+  var wpm=[240,340,480][L]*SPD(),i=0;
+  (function step(){
+    if(i>=items.length){end(dr.ok,dr.total);return;}
+    var it=items[i++],o=it[1],good=o[it[2]],k=0;
+    var full=esc(it[0]).replace(/___/g,function(){return '<mark>'+esc(good[k++])+'</mark>';});
+    var ms=Math.max(1500,wpmMs(it[0].replace(/___/g,'x'),wpm));
+    put('<div class="fbox"><div class="ptxt" style="font-size:22px;text-align:center">'+full+'</div><div class="bar-t" style="width:100%"><i id="bt"></i></div></div>');
+    var bt=$('bt');bt.style.transition='width '+ms+'ms linear';requestAnimationFrame(function(){var b=$('bt');if(b)b.style.width='100%';});
+    later(function(){
+      var c=good.join(' / ');
+      mcq(esc(it[0].replace(/___/g,'…')),[c].concat(o.filter(function(_,ix){return ix!==it[2];}).map(function(p){return p.join(' / ');})),step);
+    },ms);
+  })();
+};
+function classUI(groups,done){
+  var chips=[];groups.forEach(function(g,gi){g.slice(1).forEach(function(c){chips.push({w:c,g:gi});});});chips=shuffle(chips);
+  var sel=null,placed=0;
+  put('<p class="hint">'+C.ui[LANG].tapword+'</p><div class="bank" id="bank">'+chips.map(function(c,i){return '<button class="chp" data-i="'+i+'">'+esc(c.w)+'</button>';}).join('')+'</div><div class="groups">'+groups.map(function(g,gi){return '<button class="grp" data-g="'+gi+'"><b>'+esc(g[0])+'</b><span class="gl"></span></button>';}).join('')+'</div>');
+  $('bank').onclick=function(e){var b=e.target.closest('.chp');if(!b||b.disabled)return;if(sel)sel.classList.remove('on');sel=b;b.classList.add('on');};
+  document.querySelector('.groups').onclick=function(e){
+    var g=e.target.closest('.grp');if(!g||!sel)return;
+    var c=chips[+sel.dataset.i],ok=c.g===+g.dataset.g;dr.total++;
+    if(ok){dr.ok++;g.querySelector('.gl').insertAdjacentHTML('beforeend','<i>'+esc(c.w)+'</i>');sel.remove();sel=null;placed++;if(placed===chips.length)later(done,500);}
+    else{sel.classList.add('bad');var s=sel;later(function(){s.classList.remove('bad','on');},500);sel=null;}
+  };
+}
+RUN.clasif=function(L){classUI(X('classify')[(L+dr.round)%3],function(){end(dr.ok,dr.total);});};
+RUN.mapam=function(L){
+  var m=deckNext('m',X('mind')),ms=wpmMs(m.t,[150,220,300][L])/SPD();
+  put('<div class="ptxt">'+esc(m.t)+'</div><div class="bar-t"><i id="bt"></i></div><div class="actions"><button class="btn solid" id="pdone">'+w('got')+'</button></div>');
+  function go(){dClear();classUI(m.b,function(){end(dr.ok,dr.total);});}
+  $('pdone').onclick=go;$('bt').style.transition='width '+ms+'ms linear';requestAnimationFrame(function(){var b=$('bt');if(b)b.style.width='100%';});later(go,ms*1.4);
+};
+RUN.detecte=function(L){
+  var d=deckNext('d',X('detect')),roles=d.r,items=d.p.map(function(p,i){return [roles.length?p:'',[roles[i]].concat(roles.filter(function(_,k){return k!==i;}))];}),i=0;
+  (function step(){
+    if(i>=items.length){end(dr.ok,dr.total);return;}
+    var k=i++;mcq(LANG==='en'?'What role does this paragraph play?':'¿Qué función cumple este párrafo?',items[k][1],step,'<div class="ptxt sm">'+esc(items[k][0])+'</div>');
+  })();
+};
+RUN.histo=function(L){
+  var s=deckNext('h',X('story')),cur=s.s,k=0;
+  (function step(){
+    if(k>=s.st.length){
+      put('<div class="ptxt">'+esc(cur)+'</div><p class="hint">'+C.ui[LANG].write+'</p><textarea class="ta" placeholder="'+w('typeHere')+'"></textarea><div class="actions"><button class="btn solid" id="hd">'+w('fin')+'</button></div>');
+      $('hd').onclick=function(){end(dr.ok,dr.total);};return;
+    }
+    var st=s.st[k++];mcq(LANG==='en'?'What logically comes next?':'¿Qué viene lógicamente después?',st,function(){cur+=' '+st[0];step();},'<div class="ptxt sm">'+esc(cur)+'</div>');
+  })();
+};
+RUN.ordene=function(L){
+  var s=deckNext('o',X('order')),sh=shuffle(s.map(function(t,i){return {t:t,i:i};})),nxt=0,errs=0;
+  put('<p class="hint">'+(LANG==='en'?'Tap the sentences in order.':'Toque las frases en orden.')+'</p><div class="ordl" id="ol">'+sh.map(function(o){return '<button class="os" data-i="'+o.i+'">'+esc(o.t)+'</button>';}).join('')+'</div><div class="ordd" id="od"></div>');
+  $('ol').onclick=function(e){var b=e.target.closest('.os');if(!b)return;
+    if(+b.dataset.i===nxt){nxt++;$('od').insertAdjacentHTML('beforeend','<div>'+nxt+'. '+esc(b.textContent)+'</div>');b.remove();if(nxt===s.length){dr.total+=s.length;dr.ok+=Math.max(0,s.length-errs);later(function(){end(dr.ok,dr.total);},700);}}
+    else{errs++;b.classList.add('bad');later(function(){b.classList.remove('bad');},400);}};
+};
+RUN.quien=function(L){
+  var s=deckNext('w',X('who')),h=esc(s.t).replace(/\[\[(.+?)\]\]/g,'<mark>$1</mark>');
+  quiz(s.q.map(function(q){return [(LANG==='en'?'What does “':'¿A qué se refiere “')+q[0]+(LANG==='en'?'” refer to?':'”?'),q.slice(1)];}),function(){end(dr.ok,dr.total);},'<div class="ptxt sm">'+h+'</div>');
+};
+C.sched={en:[["7:00","wake up"],["8:00","breakfast"],["9:30","team meeting"],["11:00","write the report"],["12:30","lunch with Ana"],["14:00","call the bank"],["16:00","gym"],["19:30","cook dinner"]],
+ es:[["7:00","despertar"],["8:00","desayuno"],["9:30","reunión de equipo"],["11:00","escribir el informe"],["12:30","almuerzo con Ana"],["14:00","llamar al banco"],["16:00","gimnasio"],["19:30","preparar la cena"]]};
+RUN.horario=function(L){
+  var n=[4,6,8][L],ms=[12000,9000,6000][L]/SPD(),all=X('sched'),pool=sample(all,n).sort(function(a,b){return all.indexOf(a)-all.indexOf(b);});
+  put('<div class="sched">'+pool.map(function(r){return '<div class="srow"><b>'+r[0]+'</b><span>'+esc(r[1])+'</span></div>';}).join('')+'</div><div class="bar-t"><i id="bt"></i></div>');
+  $('bt').style.transition='width '+ms+'ms linear';requestAnimationFrame(function(){var b=$('bt');if(b)b.style.width='100%';});
+  later(function(){
+    var items=sample(pool,4).map(function(r,i){
+      if(i%2===0){return [(LANG==='en'?'At what time: ':'¿A qué hora: ')+r[1]+'?',[r[0]].concat(sample(all.filter(function(x){return x[0]!==r[0];}),3).map(function(x){return x[0];}))];}
+      return [(LANG==='en'?'What happens at ':'¿Qué hay a las ')+r[0]+'?',[r[1]].concat(sample(all.filter(function(x){return x[1]!==r[1];}),3).map(function(x){return x[1];}))];
+    });
+    quiz(items,function(){end(dr.ok,dr.total);});
+  },ms);
+};
+
+/* ---- vocabulary ---- */
+RUN.semej=function(L){
+  var syn=X('syn'),ant=X('ant'),rounds=10,items=[];
+  for(var i=0;i<rounds;i++){var isAnt=L===1||(L===2&&i%2===1),pool=isAnt?ant:syn,it=pool[rand(pool.length)];
+    var others=sample(pool.filter(function(x){return x[1]!==it[1];}),3).map(function(x){return x[1];});
+    items.push([(isAnt?C.ui[LANG].antQ:C.ui[LANG].synQ)+' “'+it[0]+'”',[it[1]].concat(others)]);}
+  quiz(items,function(){end(dr.ok,dr.total);});
+};
+RUN.deriva=function(L){
+  var list=sample(X('roots')[L],8),i=0;
+  (function step(){
+    if(i>=list.length){end(dr.ok,dr.total);return;}
+    var it=list[i++];
+    put('<div class="tgt"><b>'+esc(it[0])+'</b></div><p class="hint">'+C.ui[LANG].typed+'</p><input class="ti" id="ti" autocomplete="off" aria-label="'+w('typeHere')+'"><div class="actions"><button class="btn solid" id="tc">'+w('check')+'</button></div><p class="fb" id="fb"></p>');
+    var f=function(){var v=norm($('ti').value),ok=it[1].some(function(a){return norm(a)===v;});dr.total++;if(ok)dr.ok++;$('fb').textContent=ok?w('ok'):w('bad')+': '+it[1][0];$('tc').disabled=true;later(step,ok?500:1400);};
+    $('tc').onclick=f;$('ti').onkeydown=function(e){if(e.key==='Enter'&&!$('tc').disabled)f();};$('ti').focus();
+  })();
+};
+/* ===================== LEARNING PATH ===================== */
+var UNITS=[
+ {c:'#B93A22',t:{en:'Wake up your eyes',es:'Despierte sus ojos'},d:{en:'Smooth tracking and steady fixations',es:'Seguimiento suave y fijaciones firmes'},n:[['s-warm'],['bee',0],['fijacR',0],['abajo',0],['bola',0]]},
+ {c:'#2F7D8F',t:{en:'Widen your view',es:'Amplíe su visión'},d:{en:'Take in more words per glance',es:'Capte más palabras por mirada'},n:[['s-schulte'],['s-flash'],['ampli1',0],['capte',0],['visual1',0],['recono1',0]]},
+ {c:'#5B4BA8',t:{en:'Understand what you read',es:'Entienda lo que lee'},d:{en:'Sort, order and connect ideas',es:'Clasifique, ordene y conecte ideas'},n:[['complete',0],['clasif',0],['ordene',0],['quien',0],['idea',0]]},
+ {c:'#C27A12',t:{en:'Spot it fast',es:'Detecte rápido'},d:{en:'Scanning, differences and vocabulary',es:'Rastreo, diferencias y vocabulario'},n:[['dif1',0],['difC2F1',0],['rastreo',0],['semej',0],['deriva',0]]},
+ {c:'#2F7D4F',t:{en:'Build your pace',es:'Gane ritmo'},d:{en:'Columns, vertical fixations and timed reading',es:'Columnas, fijaciones verticales y lectura cronometrada'},n:[['fijacV',0],['ampliC2F1',0],['visualC2F1',0],['vertical',0],['idea',1],['bola',1]]},
+ {c:'#A33B6B',t:{en:'Read between the lines',es:'Lea entre líneas'},d:{en:'Structure, stories and memory',es:'Estructura, historias y memoria'},n:[['detecte',0],['histo',0],['mapam',0],['horario',0],['complete',1],['clasif',1],['quien',1]]},
+ {c:'#2B5FA8',t:{en:'Precision',es:'Precisión'},d:{en:'Finer differences, faster recognition',es:'Diferencias finas, reconocimiento más rápido'},n:[['difer',0],['dif1',1],['rastreo',1],['reconoC2F1',0],['recono1',1],['visualC2F3',0]]},
+ {c:'#1D1B18',t:{en:'Mastery',es:'Maestría'},d:{en:'Advanced level across the skills',es:'Nivel avanzado en todas las habilidades'},n:[['bee',2],['fijacV',2],['visual1',2],['capte',2],['vertical',2],['idea',2],['detecte',2],['mapam',2]]}
+];
+var pathDone=store.get('pathDone',{}),unlockAll=store.get('unlockAll',false),xp=store.get('xp',0),streak=store.get('streak',{d:'',n:0}),pendingOld=null;
+function nkey(n){return n.length>1?n[0]+':'+n[1]:n[0];}
+function allNodes(){var a=[];UNITS.forEach(function(u,ui){u.n.forEach(function(n,i){a.push({u:ui,i:i,n:n,k:nkey(n)});});});return a;}
+function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function bumpStreak(){var t=today();if(streak.d===t)return;var y=new Date();y.setDate(y.getDate()-1);var ys=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();streak={d:t,n:streak.d===ys?streak.n+1:1};store.set('streak',streak);}
+function award(key,pct,pts){
+  if(pct<70)return 0;var st=pct>=100?3:pct>=85?2:1;
+  if(key&&(pathDone[key]||0)<st){pathDone[key]=st;store.set('pathDone',pathDone);}
+  xp+=pts;store.set('xp',xp);bumpStreak();return st;
+}
+var PT={en:{unit:'Unit',xp:'XP',streak:'day streak',start:'START',locked:'Finish the previous lesson to unlock',skip:'Unlock all lessons',lock:'Lock again',lessons:'lessons',cont:'Continue',stars:'stars'},es:{unit:'Unidad',xp:'XP',streak:'días seguidos',start:'EMPEZAR',locked:'Termine la lección anterior para desbloquear',skip:'Desbloquear todo',lock:'Volver a bloquear',lessons:'lecciones',cont:'Continuar',stars:'estrellas'}};
+function pt(k){return PT[LANG][k];}
+function renderPath(){
+  flushPending();
+  var nodes=allNodes(),cur=-1;
+  nodes.forEach(function(o,ix){o.done=pathDone[o.k]||0;});
+  for(var j=0;j<nodes.length;j++){if(!nodes[j].done){cur=j;break;}}
+  var offs=[0,38,58,38,0,-38,-58,-38],g=0,h='';
+  h+='<div class="pstats"><span class="stat"><svg width="20" height="20" viewBox="0 0 24 24" fill="#E8641B" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg><b>'+streak.n+'</b> '+pt('streak')+'</span><span class="stat"><svg width="20" height="20" viewBox="0 0 24 24" fill="#F2B100" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg><b>'+xp+'</b> '+pt('xp')+'</span></div>';
+  UNITS.forEach(function(u,ui){
+    var dn=u.n.filter(function(n){return pathDone[nkey(n)];}).length;
+    h+='<div class="ubanner" style="background:'+u.c+'"><div><div class="ul">'+pt('unit')+' '+(ui+1)+'</div><div class="ut">'+esc(u.t[LANG])+'</div><div class="ud">'+esc(u.d[LANG])+'</div></div><div class="uc">'+dn+'/'+u.n.length+'</div></div><div class="upath">';
+    u.n.forEach(function(n,i){
+      var idx=g++,o=nodes[idx],st=o.done,isCur=idx===cur,open=st||isCur||unlockAll||idx<cur,id=n[0],m=OLD[id]||DT[id],lv=n.length>1?w('lv')[n[1]]:'';
+      var cls='pn'+(st?' done':'')+(isCur?' cur':'')+(!open?' lock':'');
+      h+='<div class="pnw" style="transform:translateX('+offs[idx%8]+'px)">'+(isCur?'<div class="pbub" style="color:'+u.c+'">'+pt('start')+'</div>':'')+'<button class="'+cls+'" style="--uc:'+u.c+'" data-node="'+o.k+'" aria-label="'+esc(m.t[LANG])+(lv?' - '+lv:'')+'"'+(open?'':' aria-disabled="true"')+'>'+(open?icon(m.ic):'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3h1v10H6V11zm2 0h6V8a3 3 0 0 0-6 0z"/></svg>')+'</button><div class="pnl">'+(st?'<span class="stars" aria-label="'+st+' '+pt('stars')+'">'+'★'.repeat(st)+'<i>'+'★'.repeat(3-st)+'</i></span>':esc(m.t[LANG])+(lv?' · '+esc(lv):''))+'</div></div>';
+    });
+    h+='</div>';
+  });
+  h+='<div class="pfoot"><button class="btn" id="p-unlock">'+(unlockAll?pt('lock'):pt('skip'))+'</button></div>';
+  $('p-body').innerHTML=h;
+}
+enter['s-path']=renderPath;
+$('p-body').onclick=function(e){
+  var b=e.target.closest('[data-node]');if(!b)return;
+  if(b.getAttribute('aria-disabled')==='true'){b.classList.add('shake');setTimeout(function(){b.classList.remove('shake');},400);return;}
+  var k=b.dataset.node,parts=k.split(':'),id=parts[0];
+  if(OLD[id]){pendingOld=k;var bk=document.querySelector('#'+id+' .back');if(bk)bk.dataset.go='s-path';show(id);return;}
+  dr.id=id;dr.lvl=+parts[1];dr.from='s-path';dr.node=k;show('s-drill');
+};
+$('p-body').addEventListener('click',function(e){if(e.target.id==='p-unlock'){unlockAll=!unlockAll;store.set('unlockAll',unlockAll);renderPath();}});
+
+/* ===================== 30-DAY PLAN ===================== */
+var PL={en:{title:'30-day program',day:'Day',of:'of',today:'Today',start:'Start the program',startNote:'Starts today as Day 1.',
+ intro:'Speed reading is a skill you keep, not a course you finish. This plan gives you a fixed daily routine of about 20 minutes, a benchmark every week, and a maintenance routine after day 30.',
+ why:['Eyes: 1 min of warm-up and fixation work, then 2 range or scanning drills.','Understanding: 1 comprehension or vocabulary drill, because speed only counts if you understand.','Pace: a timed reading drill, plus a speed test every 7 days.','Real reading: 5 to 10 minutes of your own book at your target pace.'],
+ min:'min',done:'done',rest:'Make up',missed:'Missed',future:'Locked until that day',markDone:'Mark as done',undo:'Undo',open:'Open',
+ target:'Target pace',noBase:'Take today\'s speed test to set your pace.',readT:'Read your book',readD:'Guided reading in the Read tab. Keep comprehension high.',
+ bench:'Benchmark',chart:'Your speed tests (effective wpm)',noChart:'Your speed test results will appear here.',complete:'Program complete',
+ completeT:'You finished the 30 days. Mastery means keeping your comprehension above 80% while you read faster than before, so keep going with the maintenance routine below.',
+ maint:'Maintenance: 3 sessions a week. Each session: 1 eye drill, 2 range or scan drills, 1 comprehension drill, 10 minutes of real reading. Repeat the speed test once a month.',
+ again:'Start a new 30-day cycle',reset:'Restart program',wk:['Foundations','Range','Pace','Integration','Final checks'],
+ wkd:['Smooth eyes, steady fixations, basic range.','Wider glances and scanning.','Reading against the clock.','Everything together, hardest levels.','Retest and review.'],
+ todayDone:'Today is complete. Come back tomorrow.',streak:'day streak'},
+ es:{title:'Programa de 30 días',day:'Día',of:'de',today:'Hoy',start:'Empezar el programa',startNote:'Empieza hoy como Día 1.',
+ intro:'La lectura veloz es una habilidad que se mantiene, no un curso que se termina. Este plan le da una rutina diaria de unos 20 minutos, una medición cada semana y una rutina de mantenimiento después del día 30.',
+ why:['Ojos: 1 min de calentamiento y fijaciones, luego 2 ejercicios de amplitud o rastreo.','Comprensión: 1 ejercicio de comprensión o vocabulario, porque la velocidad solo cuenta si entiende.','Ritmo: un ejercicio de lectura cronometrada y una prueba de velocidad cada 7 días.','Lectura real: de 5 a 10 minutos de su propio libro al ritmo objetivo.'],
+ min:'min',done:'listo',rest:'Recuperar',missed:'Perdido',future:'Bloqueado hasta ese día',markDone:'Marcar como hecho',undo:'Deshacer',open:'Abrir',
+ target:'Ritmo objetivo',noBase:'Haga hoy la prueba de velocidad para fijar su ritmo.',readT:'Lea su libro',readD:'Lectura guiada en la pestaña Leer. Mantenga alta la comprensión.',
+ bench:'Medición',chart:'Sus pruebas de velocidad (ppm efectivas)',noChart:'Aquí aparecerán los resultados de sus pruebas.',complete:'Programa completado',
+ completeT:'Terminó los 30 días. Dominar la lectura veloz es mantener la comprensión sobre 80% mientras lee más rápido que antes, así que siga con la rutina de mantenimiento.',
+ maint:'Mantenimiento: 3 sesiones por semana. Cada sesión: 1 ejercicio visual, 2 de amplitud o rastreo, 1 de comprensión y 10 minutos de lectura real. Repita la prueba de velocidad una vez al mes.',
+ again:'Empezar un nuevo ciclo de 30 días',reset:'Reiniciar programa',wk:['Fundamentos','Amplitud','Ritmo','Integración','Controles finales'],
+ wkd:['Ojos suaves, fijaciones firmes, amplitud básica.','Miradas más amplias y rastreo.','Lectura contra el reloj.','Todo junto, niveles más difíciles.','Nueva medición y repaso.'],
+ todayDone:'Hoy está completo. Vuelva mañana.',streak:'días seguidos'}};
+function pl(k){return PL[LANG][k];}
+var plan={start:store.get('planStart',null),sel:null};
+var EYES=['s-warm','bee','fijacR','fijacV','abajo','bola'];
+var SKILL=['s-schulte','ampli1','capte','visual1','s-flash','recono1','dif1','rastreo','ampliC2F1','visualC2F1','difC2F1','reconoC2F1','visualC2F3','difer'];
+var COMP=['complete','clasif','ordene','quien','detecte','histo','mapam','horario','semej','deriva','idea'];
+var BENCH=[1,7,14,21,28,30];
+function wkOf(d){return d<=7?0:d<=14?1:d<=21?2:d<=28?3:4;}
+function dayTasks(d){
+  var sl=d<=7?0:d<=18?1:2,cl=d<=9?0:d<=24?1:2,t=[],n=SKILL.length,bench=BENCH.indexOf(d)>=0;
+  function T(id,lv,mins,kind){kind=kind||(OLD[id]?'old':'drill');if(kind==='drill')mins=budgetOf(id)/60;else if(id==='s-warm')mins=2;else if(kind==='old')mins=3;return {id:id,lv:lv,mins:mins,kind:kind};}
+  t.push(T(EYES[(d-1)%6],sl,2));
+  t.push(T(SKILL[(2*d-2)%n],sl,3));
+  if(!bench||d===1)t.push(T(SKILL[(2*d-1)%n],sl,3));
+  t.push(T(COMP[(d-1)%COMP.length],cl,3));
+  if(bench)t.push(T('s-test',0,3));
+  else t.push(d%2?T('vertical',sl,3):T('idea',cl,3));
+  t.push(T('read',0,[5,6,8,10,10][wkOf(d)],'read'));
+  return t;
+}
+function planDay(){if(!plan.start)return 0;var a=new Date(plan.start+'T00:00:00'),b=new Date();b=new Date(b.getFullYear(),b.getMonth(),b.getDate());return Math.round((b-a)/86400000)+1;}
+function pkey(d,i){return 'p'+d+':'+i;}
+function dayStatus(d){var ts=dayTasks(d),dn=ts.filter(function(_,i){return pathDone[pkey(d,i)];}).length;return {done:dn,total:ts.length,all:dn===ts.length};}
+function baseWpm(){var lg=store.get('test-log',[]);return lg.length?lg[0].eff:null;}
+function targetWpm(d){var b=baseWpm();if(!b)return null;var m=[1,1.1,1.2,1.3,1.35][wkOf(d)];return Math.round(b*m/10)*10;}
+function chartSVG(){
+  var lg=store.get('test-log',[]);if(!lg.length)return '<p class="sub">'+pl('noChart')+'</p>';
+  var W=300,H=110,max=Math.max.apply(null,lg.map(function(x){return x.eff;}).concat([100]))*1.15,pts=lg.map(function(x,i){return [lg.length>1?20+i*(W-40)/(lg.length-1):W/2,H-20-(x.eff/max)*(H-40),x.eff];});
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+pl('chart')+'"><polyline fill="none" stroke="#B93A22" stroke-width="2.5" points="'+pts.map(function(p){return p[0]+','+p[1];}).join(' ')+'"/>'+pts.map(function(p){return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="#B93A22"/><text x="'+p[0]+'" y="'+(p[1]-9)+'" font-size="11" text-anchor="middle" fill="#1D1B18">'+p[2]+'</text>';}).join('')+'</svg>';
+}
+function flushPending(){if(pendingOld){pathDone[pendingOld]=3;store.set('pathDone',pathDone);xp+=10;store.set('xp',xp);bumpStreak();pendingOld=null;}}
+function renderPlan(){
+  flushPending();var h='',cur=planDay();
+  if(!plan.start){
+    h+='<div class="pl-hero"><div class="label">'+pl('title')+'</div><h1>30 '+(LANG==='en'?'days':'días')+'</h1><p class="dtxt">'+pl('intro')+'</p></div><ul class="pl-why">'+pl('why').map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul><div class="actions"><button class="btn solid" id="pl-start">'+pl('start')+'</button></div><p class="sub" style="text-align:center">'+pl('startNote')+'</p>';
+    $('pl-body').innerHTML=h;return;
+  }
+  var over=cur>30,today=Math.min(cur,30);if(plan.sel==null||plan.sel>30)plan.sel=today;
+  var tdSt=dayStatus(today);
+  h+='<div class="pl-head"><div><div class="label">'+pl('title')+'</div><div class="pl-day">'+(over?pl('complete'):pl('day')+' '+today+' '+pl('of')+' 30')+'</div><div class="sub">'+esc(pl('wk')[wkOf(today)])+' · '+esc(pl('wkd')[wkOf(today)])+'</div></div><span class="stat"><svg width="20" height="20" viewBox="0 0 24 24" fill="#E8641B" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg><b>'+streak.n+'</b></span></div>';
+  var finished=0;for(var q=1;q<=30;q++)if(dayStatus(q).all)finished++;
+  h+='<div class="bar-t"><i style="width:'+Math.round(100*finished/30)+'%"></i></div>';
+  h+='<div class="cal" role="grid">';
+  for(var d=1;d<=30;d++){
+    var s=dayStatus(d),cls='cd';if(s.all)cls+=' ok';else if(d<today||over&&d<=30)cls+=s.done?' part':' miss';else if(d===today)cls+=' now';else cls+=' fut';
+    if(d===plan.sel)cls+=' sel';if(BENCH.indexOf(d)>=0)cls+=' bm';
+    h+='<button class="'+cls+'" data-d="'+d+'" aria-label="'+pl('day')+' '+d+(s.all?', '+pl('done'):'')+'">'+(s.all?'✓':d)+'</button>';
+  }
+  h+='</div><div class="sub" style="padding:6px 0 0">◆ '+pl('bench')+'</div>';
+  var sd=plan.sel,ts=dayTasks(sd),st=dayStatus(sd),locked=sd>today&&!over,mins=ts.reduce(function(a,x){return a+x.mins;},0);
+  h+='<div class="pl-card"><div class="pl-ct"><b>'+(sd===today&&!over?pl('today')+' · ':'')+pl('day')+' '+sd+'</b><span>'+mins+' '+pl('min')+'</span></div>';
+  if(sd===today&&!over&&st.all)h+='<p class="dtxt" style="color:#2F7D4F;font-weight:600">'+pl('todayDone')+'</p>';
+  ts.forEach(function(x,i){
+    var dn=pathDone[pkey(sd,i)],m=x.id==='read'?{t:PL[LANG]&&{en:pl('readT'),es:pl('readT')},d:{en:pl('readD'),es:pl('readD')},ic:'book'}:(OLD[x.id]||DT[x.id]);
+    var title=x.id==='read'?pl('readT'):m.t[LANG],lv=x.kind==='drill'?' · '+w('lv')[x.lv]:'',sub=x.id==='read'?(targetWpm(sd)?pl('target')+': ~'+targetWpm(sd)+' wpm. ':(sd===1?'':pl('noBase')+' '))+pl('readD'):m.d[LANG];
+    if(x.id==='s-test'&&sd===1)sub=pl('noBase');if(x.id==='s-schulte')sub=(LANG==='en'?'Complete 3 tables. ':'Complete 3 tablas. ')+sub;
+    h+='<div class="pl-t'+(dn?' dn':'')+(locked?' lk':'')+'"><button class="pl-tb" data-t="'+i+'"'+(locked?' disabled':'')+'><span class="pl-chk">'+(dn?'✓':'')+'</span><span class="tx"><b>'+esc(title)+esc(lv)+'</b><span>'+esc(sub)+'</span></span><span class="tm">'+x.mins+' '+pl('min')+'</span></button>'+(x.kind==='read'&&!locked?'<button class="chip" data-r="'+i+'">'+(dn?pl('undo'):pl('markDone'))+'</button>':'')+'</div>';
+  });
+  if(locked)h+='<p class="sub">'+pl('future')+'</p>';
+  h+='</div>';
+  if(over){h+='<div class="pl-card"><b>'+pl('complete')+'</b><p class="dtxt">'+pl('completeT')+'</p><p class="dtxt">'+pl('maint')+'</p><div class="actions"><button class="btn solid" id="pl-start">'+pl('again')+'</button></div></div>';}
+  h+='<div class="pl-card"><b>'+pl('chart')+'</b>'+chartSVG()+'</div><div class="pfoot"><button class="btn" id="pl-reset">'+pl('reset')+'</button></div>';
+  $('pl-body').innerHTML=h;
+}
+enter['s-plan']=renderPlan;
+$('pl-body').onclick=function(e){
+  var t=e.target;
+  if(t.id==='pl-start'){var d=new Date();plan.start=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');store.set('planStart',plan.start);plan.sel=null;
+    Object.keys(pathDone).forEach(function(k){if(k.charAt(0)==='p'&&/^p\d+:/.test(k))delete pathDone[k];});store.set('pathDone',pathDone);renderPlan();return;}
+  if(t.id==='pl-reset'){plan.start=null;store.set('planStart',null);renderPlan();return;}
+  var dd=t.closest('[data-d]');if(dd){plan.sel=+dd.dataset.d;renderPlan();return;}
+  var rb=t.closest('[data-r]');if(rb){var k=pkey(plan.sel,+rb.dataset.r);if(pathDone[k])delete pathDone[k];else{pathDone[k]=3;xp+=10;store.set('xp',xp);bumpStreak();}store.set('pathDone',pathDone);renderPlan();return;}
+  var tb=t.closest('[data-t]');if(!tb||tb.disabled)return;
+  var i=+tb.dataset.t,x=dayTasks(plan.sel)[i],key=pkey(plan.sel,i);
+  if(x.kind==='read'){show('s-read');return;}
+  if(x.kind==='old'){pendingOld=key;var bk=document.querySelector('#'+x.id+' .back');if(bk)bk.dataset.go='s-plan';if(x.id==='s-test')testPending=true;show(x.id);return;}
+  dr.id=x.id;dr.lvl=x.lv;dr.from='s-plan';dr.node=key;show('s-drill');
+};
+var testPending=false;
+
+renderHub();renderPath();renderPlan();
+setBook('Pride and Prejudice (sample)',SAMPLE);
+hubPill();
+})();
+</script>
+</body>
+</html>
