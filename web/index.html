@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="2026-11-20.2">
+<meta name="build" content="2026-11-20.3">
 <title>Speed Reader Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -263,9 +263,9 @@ mark{background:var(--tint);padding:0 3px;border-radius:4px}
 <!-- EYE WARM-UP -->
 <section id="s-drill" class="screen" aria-label="Drill"><header class="bar"><button class="back" id="dr-back" data-go="s-hub" aria-label="Back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b id="dr-title"></b><span id="dr-sub"></span></div><div class="sp" id="dr-time" style="font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center"></div></header><div class="chips" id="dr-lv" style="padding:8px 0"></div><div id="dr-body"></div></section>
 <section id="s-warm" class="screen" aria-label="Eye warm-up">
-  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Eye warm-up</b><span>2 min: follow, then jump</span></div><div class="sp"></div></header>
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Eye warm-up</b><span>90 s: follow, then jump</span></div><div class="sp"></div></header>
   <div class="arena" id="wu-arena"><div class="dot" id="wu-dot"></div><div class="phase" id="wu-phase">Press Start, keep your head still</div></div>
-  <p class="hint">Three rounds of 40 seconds. Each round the dot glides on a new path and you follow it smoothly, then it jumps between targets and your eyes jump with it. Total 2 minutes.</p>
+  <p class="hint">Three rounds of 30 seconds. Each round the dot glides on a new path and you follow it smoothly, then it jumps between targets and your eyes jump with it. Total 90 seconds.</p>
   <div class="actions"><button class="btn solid" id="wu-btn">Start</button></div>
 </section>
 
@@ -465,18 +465,18 @@ function wuStop(msg){
 }
 function wuLoop(now){
   if(!wu.running)return;
-  var t=now-wu.t0,x,y,d=$('wu-dot'),cyc=Math.floor(t/40000),w2=t%40000;
-  if(t>=120000){wuStop('Warm-up done. Your eyes are ready.');return;}
-  if(w2<20000){
-    var u=w2/1000*2*Math.PI/5;
+  var t=now-wu.t0,x,y,d=$('wu-dot'),cyc=Math.floor(t/30000),w2=t%30000;
+  if(t>=90000){wuStop('Warm-up done. Your eyes are ready.');return;}
+  if(w2<15000){
+    var u=w2/1000*2*Math.PI/3.75;
     if(cyc===0){x=.5+.4*Math.sin(u);y=.5+.28*Math.sin(2*u);}
     else if(cyc===1){x=.5+.4*Math.sin(u);y=.5;}
     else{x=.5;y=.5+.38*Math.sin(u);}
-    $('wu-phase').textContent=['Follow the dot: figure eight','Follow the dot: side to side','Follow the dot: up and down'][cyc]+' '+Math.ceil((120000-t)/1000)+' s left';
+    $('wu-phase').textContent=['Follow the dot: figure eight','Follow the dot: side to side','Follow the dot: up and down'][cyc]+' '+Math.ceil((90000-t)/1000)+' s left';
   }else{
-    var k=(Math.floor((w2-20000)/700)+cyc*2)%TARGETS.length;
+    var k=(Math.floor((w2-15000)/700)+cyc*2)%TARGETS.length;
     x=TARGETS[k][0];y=TARGETS[k][1];
-    $('wu-phase').textContent='Jump with the dot '+Math.ceil((120000-t)/1000)+' s left';
+    $('wu-phase').textContent='Jump with the dot '+Math.ceil((90000-t)/1000)+' s left';
   }
   d.style.left=(x*100)+'%';d.style.top=(y*100)+'%';
   wu.raf=requestAnimationFrame(wuLoop);
@@ -536,7 +536,7 @@ var DOTONLY='';
 function splitDot(t,hid){var s=String(t),n=s.length,i=Math.floor(n/2),j=i,k,vs=hid?';visibility:hidden':'';
   if(s.charAt(i)===' '){for(k=1;k<n;k++){if(i-k>=0&&s.charAt(i-k)!==' '){j=i-k;break;}if(i+k<n&&s.charAt(i+k)!==' '){j=i+k;break;}}}
   return '<span class="rl" style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);width:100%;white-space:pre"><span style="text-align:right'+vs+'">'+esc(s.slice(0,j))+'</span><span style="color:#FF7A5C;font-weight:800'+vs+'">'+esc(s.charAt(j))+'</span><span style="text-align:left'+vs+'">'+esc(s.slice(j+1))+'</span></span>';}
-var fl={n:3,ms:300,round:0,score:0,total:30,answer:'',timers:[],locked:true};
+var fl={n:3,ms:300,round:0,score:0,total:12,answer:'',timers:[],locked:true};
 function cleanWord(w){return w.replace(/^[^A-Za-z']+|[^A-Za-z']+$/g,'');}
 var DEFAULT_POOL=tokenize(SAMPLE).map(function(x){return cleanWord(x.t);}).filter(Boolean);
 function pool(){
@@ -601,7 +601,7 @@ $('fl-msm').onclick=function(){fl.ms=Math.min(1000,fl.ms+50);flLabels();};
 $('fl-msp').onclick=function(){fl.ms=Math.max(50,fl.ms-50);flLabels();};
 $('fl-nm').onclick=function(){fl.n=Math.max(1,fl.n-1);flLabels();};
 $('fl-np').onclick=function(){fl.n=Math.min(4,fl.n+1);flLabels();};
-enter['s-flash']=function(){flClear();fl.round=0;fl.score=0;$('fl-opts').innerHTML='';$('fl-word').innerHTML=DOTONLY;$('fl-hint').textContent='Press Start. A phrase flashes at the center.';$('fl-start').textContent='Start';$('fl-start').style.display='';$('fl-prog').textContent='30 rounds, about 3 min';flLabels();};
+enter['s-flash']=function(){flClear();fl.round=0;fl.score=0;$('fl-opts').innerHTML='';$('fl-word').innerHTML=DOTONLY;$('fl-hint').textContent='Press Start. A phrase flashes at the center.';$('fl-start').textContent='Start';$('fl-start').style.display='';$('fl-prog').textContent='12 rounds, about 1 min';flLabels();};
 leave['s-flash']=flClear;
 
 /* ---------- shared controls ---------- */
@@ -1172,7 +1172,7 @@ function renderHub(){
     h+='<div class="label" style="padding:22px 0 4px">'+esc(c.t[LANG])+'</div><div class="list">';
     c.ids.forEach(function(id){
       var o=OLD[id],d=DT[id],m=o||d,go=o?id:'s-drill',bst=!o?bestOf(id):null;
-      h+='<button class="row" data-go="'+go+'"'+(o?'':' data-drill="'+id+'"')+'><span class="ic">'+icon(m.ic)+'</span><span class="tx"><b>'+esc(m.t[LANG])+'</b><span>'+esc(m.d[LANG])+'</span></span><span class="tm">'+(bst!=null?bst+'%':(o?(id==='s-warm'?2:3):budgetOf(id)/60)+' min')+'</span></button>';
+      h+='<button class="row" data-go="'+go+'"'+(o?'':' data-drill="'+id+'"')+'><span class="ic">'+icon(m.ic)+'</span><span class="tx"><b>'+esc(m.t[LANG])+'</b><span>'+esc(m.d[LANG])+'</span></span><span class="tm">'+(bst!=null?bst+'%':(o?(id==='s-warm'?1.5:1):budgetOf(id)/60)+' min')+'</span></button>';
     });
     h+='</div>';
   });
@@ -1272,8 +1272,8 @@ var SPS=[.5,.75,1,1.25,1.5,2,2.5,3,4,5,6];
 var WPMB={bola:[200,300,400],vertical:[220,300,400],idea:[220,320,450],visualC2F3:[250,350,500],complete:[240,340,480]};
 var SPEEDY={bee:1,fijacR:1,fijacV:1,abajo:1,bola:1,vertical:1,idea:1,visualC2F3:1,ampli1:1,ampliC2F1:1,capte:1,visual1:1,visualC2F1:1,recono1:1,reconoC2F1:1,dif1:1,difC2F1:1,difer:1,mapam:1,horario:1,complete:1};
 function SPD(){return dr.spd||1;}
-var BUDS={ordene:120,quien:120,horario:150,deriva:150};
-function budgetOf(id){return (BUDS[id]||180);}
+var BUDS={};
+function budgetOf(id){return (BUDS[id]||60);}
 var DK={};
 function deckNext(name,arr){var k=name+LANG+arr.length;if(!DK[k]||!DK[k].length)DK[k]=shuffle(arr.map(function(_,i){return i;}));return arr[DK[k].pop()];}
 function dTick(){var left=Math.max(0,dr.budget-(Date.now()-dr.t0));$('dr-time').textContent=Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');}
@@ -1620,7 +1620,7 @@ $('p-body').addEventListener('click',function(e){if(e.target.id==='p-unlock'){un
 
 /* ===================== 30-DAY PLAN ===================== */
 var PL={en:{title:'30-day program',day:'Day',of:'of',today:'Today',start:'Start the program',startNote:'Starts today as Day 1.',
- intro:'Speed reading is a skill you keep, not a course you finish. This plan gives you a fixed daily routine of about 20 minutes, a benchmark every week, and a maintenance routine after day 30.',
+ intro:'Speed reading is a skill you keep, not a course you finish. This plan gives you a fixed daily routine of about 15 minutes, a benchmark every week, and a maintenance routine after day 30.',
  why:['Eyes: 1 min of warm-up and fixation work, then 2 range or scanning drills.','Understanding: 1 comprehension or vocabulary drill, because speed only counts if you understand.','Pace: a timed reading drill, plus a speed test every 7 days.','Real reading: 5 to 10 minutes of your own book at your target pace.'],
  min:'min',done:'done',rest:'Make up',missed:'Missed',future:'Locked until that day',markDone:'Mark as done',undo:'Undo',open:'Open',
  target:'Target pace',noBase:'Take today\'s speed test to set your pace.',readT:'Read your book',readD:'Guided reading in the Read tab. Keep comprehension high.',
@@ -1631,7 +1631,7 @@ var PL={en:{title:'30-day program',day:'Day',of:'of',today:'Today',start:'Start 
  wkd:['Smooth eyes, steady fixations, basic range.','Wider glances and scanning.','Reading against the clock.','Everything together, hardest levels.','Retest and review.'],
  todayDone:'Today is complete. Come back tomorrow.',streak:'day streak'},
  es:{title:'Programa de 30 días',day:'Día',of:'de',today:'Hoy',start:'Empezar el programa',startNote:'Empieza hoy como Día 1.',
- intro:'La lectura veloz es una habilidad que se mantiene, no un curso que se termina. Este plan le da una rutina diaria de unos 20 minutos, una medición cada semana y una rutina de mantenimiento después del día 30.',
+ intro:'La lectura veloz es una habilidad que se mantiene, no un curso que se termina. Este plan le da una rutina diaria de unos 15 minutos, una medición cada semana y una rutina de mantenimiento después del día 30.',
  why:['Ojos: 1 min de calentamiento y fijaciones, luego 2 ejercicios de amplitud o rastreo.','Comprensión: 1 ejercicio de comprensión o vocabulario, porque la velocidad solo cuenta si entiende.','Ritmo: un ejercicio de lectura cronometrada y una prueba de velocidad cada 7 días.','Lectura real: de 5 a 10 minutos de su propio libro al ritmo objetivo.'],
  min:'min',done:'listo',rest:'Recuperar',missed:'Perdido',future:'Bloqueado hasta ese día',markDone:'Marcar como hecho',undo:'Deshacer',open:'Abrir',
  target:'Ritmo objetivo',noBase:'Haga hoy la prueba de velocidad para fijar su ritmo.',readT:'Lea su libro',readD:'Lectura guiada en la pestaña Leer. Mantenga alta la comprensión.',
@@ -1650,7 +1650,7 @@ var BENCH=[1,7,14,21,28,30];
 function wkOf(d){return d<=7?0:d<=14?1:d<=21?2:d<=28?3:4;}
 function dayTasks(d){
   var sl=d<=7?0:d<=18?1:2,cl=d<=9?0:d<=24?1:2,t=[],n=SKILL.length,bench=BENCH.indexOf(d)>=0;
-  function T(id,lv,mins,kind){kind=kind||(OLD[id]?'old':'drill');if(kind==='drill')mins=budgetOf(id)/60;else if(id==='s-warm')mins=2;else if(kind==='old')mins=3;return {id:id,lv:lv,mins:mins,kind:kind};}
+  function T(id,lv,mins,kind){kind=kind||(OLD[id]?'old':'drill');if(kind==='drill')mins=budgetOf(id)/60;else if(id==='s-warm')mins=1.5;else if(id==='s-test')mins=2;else if(kind==='old')mins=1;return {id:id,lv:lv,mins:mins,kind:kind};}
   t.push(T(EYES[(d-1)%6],sl,2));
   t.push(T(SKILL[(2*d-2)%n],sl,3));
   if(!bench||d===1)t.push(T(SKILL[(2*d-1)%n],sl,3));
@@ -1695,7 +1695,7 @@ function renderPlan(){
   ts.forEach(function(x,i){
     var dn=pathDone[pkey(sd,i)],m=x.id==='read'?{t:PL[LANG]&&{en:pl('readT'),es:pl('readT')},d:{en:pl('readD'),es:pl('readD')},ic:'book'}:(OLD[x.id]||DT[x.id]);
     var title=x.id==='read'?pl('readT'):m.t[LANG],lv=x.kind==='drill'?' · '+w('lv')[x.lv]:'',sub=x.id==='read'?(targetWpm(sd)?pl('target')+': ~'+targetWpm(sd)+' wpm. ':(sd===1?'':pl('noBase')+' '))+pl('readD'):m.d[LANG];
-    if(x.id==='s-test'&&sd===1)sub=pl('noBase');if(x.id==='s-schulte')sub=(LANG==='en'?'Complete 3 tables. ':'Complete 3 tablas. ')+sub;
+    if(x.id==='s-test'&&sd===1)sub=pl('noBase');if(x.id==='s-schulte')sub=(LANG==='en'?'Complete 1 table. ':'Complete 1 tabla. ')+sub;
     h+='<div class="pl-t'+(dn?' dn':'')+(locked?' lk':'')+'"><button class="pl-tb" data-t="'+i+'"'+(locked?' disabled':'')+'><span class="pl-chk">'+(dn?'✓':'')+'</span><span class="tx"><b>'+esc(title)+esc(lv)+'</b><span>'+esc(sub)+'</span></span><span class="tm">'+x.mins+' '+pl('min')+'</span></button>'+(x.kind==='read'&&!locked?'<button class="chip" data-r="'+i+'">'+(dn?pl('undo'):pl('markDone'))+'</button>':'')+'</div>';
   });
   if(locked)h+='<p class="sub">'+pl('future')+'</p>';
