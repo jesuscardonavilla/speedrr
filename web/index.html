@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="2026-11-20.4">
+<meta name="build" content="2026-11-20.5">
 <title>Speed Reader Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -159,6 +159,27 @@ nav#tabs{height:64px;flex:none;border-top:1px solid var(--line);display:flex;bac
 .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
 .btns .btn{height:48px;flex:1;min-width:120px;padding:0 14px}
+.where{font-size:13px;color:var(--muted)}
+.where b{display:block;font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink);line-height:1.25;margin-top:2px}
+.prev{position:relative;font-family:var(--serif);font-size:15px;line-height:1.65;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;max-height:240px;overflow:auto}
+.prev .rd{color:#6B655C}
+.prev mark{background:var(--tint);color:var(--ink);border-radius:4px;padding:0 2px;font-weight:600}
+.navrow{display:flex;gap:8px}
+.navrow .btn{flex:1;height:44px;padding:0 8px;font-size:14px}
+#bk-seek{width:100%;height:32px;accent-color:var(--accent)}
+.toc{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.tocrow{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;width:100%;padding:8px 14px 8px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+.tocrow .tn{width:28px;flex:none;font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.tocrow .tt{flex:1;min-width:0;font-family:var(--serif);font-size:15px;font-weight:500;line-height:1.3}
+.tocrow .tw{flex:none;font-size:12px;color:var(--muted);white-space:nowrap}
+.tocrow.cur{border-color:var(--accent);background:var(--tint)}
+.tocrow.done .tt{color:#6B655C}
+.gnav{display:flex;align-items:center;gap:6px;margin-top:8px}
+.gnav .gb{width:44px;height:44px;flex:none;border-radius:22px;border:1px solid #C9C2B4;background:transparent;display:flex;align-items:center;justify-content:center}
+.gnav .gc{flex:1;min-width:0;height:44px;border:none;background:transparent;border-radius:12px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 4px}
+.gnav .gc small{font-size:11px;color:var(--muted);white-space:nowrap}
+.gnav .gc b{font-size:13px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#g-text .w{cursor:pointer}
 #read-msg{font-size:14px;color:var(--muted);min-height:20px}
 
 /* test */
@@ -344,33 +365,52 @@ mark{background:var(--tint);padding:0 3px;border-radius:4px}
 <!-- READ (library) -->
 <section id="s-read" class="screen" aria-label="Read">
   <div class="home-head"><h1>Read</h1></div>
-  <div class="drop">
-    <div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Add your own book</b><span class="sub">EPUB or plain text file. PDF import is not in this test.</span></div>
-    <label class="filebtn" for="file">Choose a file<input type="file" id="file" accept=".epub,.txt,text/plain,application/epub+zip"></label>
-    <textarea id="paste" aria-label="Or paste text" placeholder="Or paste any text here"></textarea>
-    <button class="btn" id="paste-use" style="height:44px">Use pasted text</button>
-    <div id="read-msg" role="status"></div>
-  </div>
-  <div class="label" style="padding:20px 0 0">Current book</div>
   <div class="card">
     <div style="font-family:var(--serif);font-size:20px;font-weight:600;line-height:1.2" id="bk-title"></div>
     <div class="sub" id="bk-meta"></div>
     <div class="pbar"><i id="bk-bar"></i></div>
-    <div class="btns" style="margin-top:8px">
-      <button class="btn red" data-go="s-guided">Guided reading</button>
+    <div class="where"><span id="bk-wl"></span><b id="bk-wt"></b></div>
+    <div class="prev" id="bk-prev" aria-label="Paragraph you are on"></div>
+    <div class="navrow"><button class="btn" id="bk-pp">&#8249; Paragraph</button><button class="btn" id="bk-np">Paragraph &#8250;</button></div>
+    <div class="navrow" id="bk-chrow"><button class="btn" id="bk-pc">&#171; Chapter</button><button class="btn" id="bk-nc">Chapter &#187;</button></div>
+    <input type="range" id="bk-seek" min="0" max="1000" value="0" aria-label="Jump to a place in the book">
+    <button class="btn solid" id="bk-chs" style="height:48px">Choose a chapter</button>
+    <div class="btns" style="margin-top:4px">
+      <button class="btn red" data-go="s-guided">Read from here</button>
       <button class="btn" data-go="s-flow">Word flow</button>
       <button class="btn" data-go="s-col">Column drill</button>
     </div>
     <button class="btn" id="bk-restart" style="height:44px;margin-top:2px">Start from the beginning</button>
   </div>
+  <div class="label" style="padding:20px 0 0">Add a book</div>
+  <div class="drop">
+    <div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Add your own book</b><span class="sub">EPUB or plain text file. It stays saved on this device. PDF import is not in this test.</span></div>
+    <label class="filebtn" for="file">Choose a file<input type="file" id="file" accept=".epub,.txt,text/plain,application/epub+zip"></label>
+    <textarea id="paste" aria-label="Or paste text" placeholder="Or paste any text here"></textarea>
+    <button class="btn" id="paste-use" style="height:44px">Use pasted text</button>
+    <div id="read-msg" role="status"></div>
+  </div>
 </section>
 
 <!-- GUIDED READING -->
 <section id="s-guided" class="screen" aria-label="Guided reading">
-  <header class="bar"><button class="back" data-go="s-read" aria-label="Back to Read"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b id="g-title"></b><span>Guided reading</span></div><div class="sp"></div></header>
+  <header class="bar"><button class="back" data-go="s-read" aria-label="Back to Read"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b id="g-title"></b><span>Guided reading</span></div><button class="back" id="g-toc" aria-label="Chapters"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button></header>
+  <div class="gnav">
+    <button class="gb gch" id="g-pc" aria-label="Previous chapter" title="Previous chapter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></svg></button>
+    <button class="gb" id="g-pp" aria-label="Previous paragraph" title="Previous paragraph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="gc" id="g-ch" aria-label="Chapters"><small id="g-cl"></small><b id="g-ct"></b></button>
+    <button class="gb" id="g-np" aria-label="Next paragraph" title="Next paragraph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    <button class="gb gch" id="g-nc" aria-label="Next chapter" title="Next chapter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6l6 6-6 6M13 6l6 6-6 6"/></svg></button>
+  </div>
   <div class="page"><div id="g-text"></div></div>
   <div class="pbar"><i id="g-bar"></i></div>
   <div id="g-ctl"></div>
+</section>
+
+<!-- CHAPTERS -->
+<section id="s-toc" class="screen" aria-label="Chapters">
+  <header class="bar"><button class="back" id="toc-back" aria-label="Back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Chapters</b><span id="toc-sub"></span></div><div class="sp"></div></header>
+  <div class="toc" id="toc-list"></div>
 </section>
 
 </main>
@@ -409,35 +449,108 @@ var TEST_Q=[
 ];
 
 /* ---------- book ---------- */
-var book={title:'',words:[],key:'',pos:0};
-function tokenize(text){
-  var out=[];
+var book={title:'',words:[],key:'',pos:0,chapters:[]};
+var tocFrom='s-read';
+function tokenizeInto(out,text){
   text.split(/\n\s*\n/).forEach(function(p){
     var ws=p.split(/\s+/).filter(Boolean);
     ws.forEach(function(t,i){out.push({t:t,br:i===0&&out.length>0});});
   });
+}
+function tokenize(text){var out=[];tokenizeInto(out,text);return out;}
+function nWords(s){return s.split(/\s+/).filter(Boolean).length;}
+function setPos(i){book.pos=i;store.set(book.key,i);}
+/* plain text: find lines like "Chapter 3" or "Prologue" that stand alone */
+function splitTextChapters(text){
+  var paras=text.split(/\n\s*\n/),heads=[];
+  var r1=/^(chapter|chap\.|cap[ií]tulo)\s+([0-9]+|[ivxlcdm]+|[a-z-]+)\b/i;
+  var r2=/^(prologue|pr[oó]logo|epilogue|ep[ií]logo|preface|prefacio|introduction|introducci[oó]n|part\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five)|parte\s+([0-9]+|[ivxlcdm]+)|book\s+([0-9]+|[ivxlcdm]+|one|two|three)|libro\s+([0-9]+|[ivxlcdm]+))\b/i;
+  paras.forEach(function(p,i){
+    var t=p.trim();
+    if(!t||t.length>80||t.indexOf('\n')>=0||/[.!?,;"”]$/.test(t))return;
+    if(r1.test(t)||r2.test(t))heads.push(i);
+  });
+  if(heads.length<2)return null;
+  var out=[];
+  if(heads[0]>0){var pre=paras.slice(0,heads[0]).join('\n\n');if(nWords(pre)>=40)out.push({title:'Beginning',text:pre});}
+  heads.forEach(function(h,k){
+    var e=k+1<heads.length?heads[k+1]:paras.length;
+    out.push({title:paras[h].trim(),text:paras.slice(h,e).join('\n\n')});
+  });
   return out;
 }
-function setPos(i){book.pos=i;store.set(book.key,i);}
-function setBook(title,text){
-  book.title=title;
-  book.words=tokenize(text);
-  book.key='pos:'+title+':'+book.words.length;
-  book.pos=clamp(store.get(book.key,0),0,Math.max(0,book.words.length-1));
-  renderBook();
+function saveBook(title,text,chs){
+  try{
+    localStorage.setItem('book:last',JSON.stringify(chs&&chs.length?{t:title,c:chs.map(function(c){return [c.title,c.text];})}:{t:title,x:text}));
+    return true;
+  }catch(e){try{localStorage.removeItem('book:last');}catch(e2){}return false;}
 }
-function renderBook(){
+function setBook(title,text,chs,persist){
+  var out=[],list=[];
+  if(chs&&chs.length){chs.forEach(function(c){var st=out.length;tokenizeInto(out,c.text);if(out.length>st)list.push({title:c.title,start:st});});}
+  else tokenizeInto(out,text);
+  book.title=title;book.words=out;book.chapters=list.length>1?list:[];
+  book.key='pos:'+title+':'+out.length;
+  book.pos=clamp(store.get(book.key,0),0,Math.max(0,out.length-1));
+  var ok=persist===false?true:saveBook(title,text,chs);
+  renderBook();
+  return ok;
+}
+/* chapter and paragraph helpers */
+function chIndexAt(i){var c=book.chapters,k=-1;for(var j=0;j<c.length;j++){if(c[j].start<=i)k=j;else break;}return k;}
+function chEnd(j){return j+1<book.chapters.length?book.chapters[j+1].start:book.words.length;}
+function nextChapterPos(i){var k=chIndexAt(i),c=book.chapters;return k+1<c.length?c[k+1].start:i;}
+function prevChapterPos(i){var k=chIndexAt(i),c=book.chapters;if(k<0)return 0;return (i-c[k].start>40||k===0)?c[k].start:c[k-1].start;}
+function parStart(i){
+  var W=book.words;i=clamp(i,0,Math.max(0,W.length-1));
+  var j=i,n=0;
+  while(j>0&&!W[j].br&&n<700){j--;n++;}
+  if(n>=700){j=i;n=0;while(j>0&&n<60&&!/[.!?]["')\]]*$/.test(W[j-1].t)){j--;n++;}}
+  return j;
+}
+function parEnd(s0){
+  var W=book.words,j=s0+1,n=0;
+  while(j<W.length&&!W[j].br&&n<700){j++;n++;}
+  if(n>=700){j=s0+1;n=0;while(j<W.length&&n<80&&!/[.!?]["')\]]*$/.test(W[j-1].t)){j++;n++;}}
+  return j;
+}
+function nextPar(i){var e=parEnd(parStart(i));return e>=book.words.length?i:e;}
+function prevPar(i){var s0=parStart(i);return i>s0?s0:(s0>0?parStart(s0-1):0);}
+function renderPreview(el,pos){
+  var W=book.words;el.textContent='';
+  if(!W.length)return;
+  pos=clamp(pos,0,W.length-1);
+  var s0=parStart(pos),e=parEnd(s0);if(e<=pos)e=pos+1;
+  var a=s0,b=e;
+  if(b-a>120){a=Math.max(s0,pos-30);b=Math.min(e,a+120);}
+  function words(x,y){return W.slice(x,y).map(function(w){return w.t;}).join(' ');}
+  if(a>s0)el.appendChild(document.createTextNode('… '));
+  if(pos>a){var rd=document.createElement('span');rd.className='rd';rd.textContent=words(a,pos)+' ';el.appendChild(rd);}
+  var m=document.createElement('mark');m.textContent=W[pos].t;el.appendChild(m);
+  if(b>pos+1)el.appendChild(document.createTextNode(' '+words(pos+1,b)));
+  if(b<e)el.appendChild(document.createTextNode(' …'));
+  var mk=el.querySelector('mark');
+  if(mk&&mk.offsetTop>el.clientHeight-40)el.scrollTop=mk.offsetTop-30;
+}
+function renderBook(skipSeek){
+  var n=book.words.length,pos=book.pos,hasC=book.chapters.length>0;
   $('bk-title').textContent=book.title;
-  var n=book.words.length;
-  $('bk-meta').textContent=n.toLocaleString()+' words, about '+Math.max(1,Math.round(n/250))+' min at a normal pace';
-  $('bk-bar').style.width=(n>1?Math.round(100*book.pos/(n-1)):0)+'%';
+  $('bk-meta').textContent=n.toLocaleString()+' words'+(hasC?', '+book.chapters.length+' chapters':'')+', about '+Math.max(1,Math.round(n/250))+' min at a normal pace';
+  var pct=n>1?Math.round(100*pos/(n-1)):0,k=Math.max(0,chIndexAt(pos));
+  $('bk-bar').style.width=pct+'%';
+  $('bk-wl').textContent=hasC?'Chapter '+(k+1)+' of '+book.chapters.length+' · '+pct+'% of the book':pct+'% of the book';
+  $('bk-wt').textContent=hasC?book.chapters[k].title:'Where you left off';
+  $('bk-chrow').style.display=hasC?'flex':'none';
+  $('bk-chs').style.display=hasC?'':'none';
+  if(!skipSeek)$('bk-seek').value=n>1?Math.round(1000*pos/(n-1)):0;
+  renderPreview($('bk-prev'),pos);
   $('g-title').textContent=book.title;
   $('rs-title').textContent=book.title;
   $('c-title').textContent=book.title;
 }
 
 /* ---------- navigation ---------- */
-var screens=['s-hub','s-warm','s-schulte','s-flash','s-flow','s-col','s-test','s-read','s-guided','s-drill','s-path','s-plan'];
+var screens=['s-hub','s-warm','s-schulte','s-flash','s-flow','s-col','s-test','s-read','s-guided','s-toc','s-drill','s-path','s-plan'];
 var current='s-plan';
 var enter={},leave={};
 function show(id){
@@ -618,10 +731,14 @@ function setPlayIcon(p,state){
 
 /* ---------- pacer (guided reading and column drill) ---------- */
 function Pacer(cfg){
-  var p={idx:0,pageStart:0,playing:false,timer:0,spans:[]};
+  var p={idx:0,pageStart:0,pageEnd:0,playing:false,timer:0,spans:[]};
+  p.pstart=function(i){if(!cfg.paragraphs)return i;var s0=parStart(i);if(i-s0>200)s0=Math.max(s0,i-40);return s0;};
   p.render=function(){
     var U=cfg.units(),end=Math.min(p.pageStart+cfg.pageSize,U.length);
+    if(cfg.paragraphs){var cap=end+300;while(end<U.length&&end<cap&&!U[end].br)end++;}
+    p.pageEnd=end;
     cfg.el.innerHTML='';p.spans=[];
+    if(cfg.scroll&&cfg.el.parentNode)cfg.el.parentNode.scrollTop=0;
     for(var i=p.pageStart;i<end;i++){
       if(cfg.paragraphs&&U[i].br&&i>p.pageStart){var br=document.createElement('div');br.className='pbr';cfg.el.appendChild(br);}
       var s=document.createElement('span');s.className='w';s.textContent=U[i].t;cfg.el.appendChild(s);p.spans.push(s);
@@ -636,12 +753,19 @@ function Pacer(cfg){
       else if(i<e){var f=i===p.idx,l=i===e-1;cls+=' cur'+(f&&l?' solo':f?' first':l?' last':'');}
       s.className=cls;
     });
+    if(cfg.scroll){
+      var cs=p.spans[p.idx-p.pageStart],box=cfg.el.parentNode;
+      if(cs&&box){
+        var cr=box.getBoundingClientRect(),sr=cs.getBoundingClientRect();
+        if(sr.bottom>cr.bottom-50||sr.top<cr.top+8)box.scrollTop+=sr.top-cr.top-cr.height*.3;
+      }
+    }
     if(cfg.onIndex)cfg.onIndex(p.idx);
   };
   p.ensure=function(){
-    if(p.idx<p.pageStart||p.idx+cfg.chunk()>p.pageStart+cfg.pageSize){p.pageStart=p.idx;p.render();}else p.paint();
+    if(p.idx<p.pageStart||(p.idx+cfg.chunk()>p.pageEnd&&p.pageEnd<cfg.units().length)){p.pageStart=p.pstart(p.idx);p.render();}else p.paint();
   };
-  p.load=function(i){p.idx=clamp(i,0,Math.max(0,cfg.units().length-1));p.pageStart=p.idx;p.render();};
+  p.load=function(i){p.idx=clamp(i,0,Math.max(0,cfg.units().length-1));p.pageStart=p.pstart(p.idx);p.render();};
   p.refresh=function(){p.ensure();};
   p.reschedule=function(){clearTimeout(p.timer);if(!p.playing)return;
     var U=cfg.units(),c=cfg.chunk(),d=60000*c/cfg.wpm(),last=U[Math.min(p.idx+c,U.length)-1];
@@ -659,6 +783,10 @@ function Pacer(cfg){
   };
   p.pause=function(){p.playing=false;clearTimeout(p.timer);if(cfg.onState)cfg.onState('pause');};
   p.seek=function(i){p.idx=clamp(i,0,Math.max(0,cfg.units().length-1));p.ensure();p.reschedule();};
+  if(cfg.tap)cfg.el.addEventListener('click',function(e){
+    var t=e.target.closest('.w');if(!t)return;
+    var k=p.spans.indexOf(t);if(k>=0)p.seek(p.pageStart+k);
+  });
   return p;
 }
 function wire(prefix,pacer,st,skip,onChunk){
@@ -682,14 +810,65 @@ function wire(prefix,pacer,st,skip,onChunk){
 var gst={wpm:350,chunk:3};
 $('g-ctl').innerHTML=controlsHTML('g',{label:'Words per chunk',values:[1,2,3,4]});
 var gp=Pacer({
-  el:$('g-text'),pageSize:120,paragraphs:true,
+  el:$('g-text'),pageSize:120,paragraphs:true,scroll:true,tap:true,
   units:function(){return book.words;},chunk:function(){return gst.chunk;},wpm:function(){return gst.wpm;},
-  onIndex:function(i){setPos(i);$('g-bar').style.width=(book.words.length>1?Math.round(100*i/(book.words.length-1)):0)+'%';},
+  onIndex:function(i){setPos(i);$('g-bar').style.width=(book.words.length>1?Math.round(100*i/(book.words.length-1)):0)+'%';gnavUpdate(i);},
   onState:function(s){setPlayIcon('g',s);}
 });
 wire('g',gp,gst,6);
-enter['s-guided']=function(){gp.load(book.pos);setPlayIcon('g','pause');};
+var gLast='';
+function gnavUpdate(i){
+  var n=book.words.length,pct=n>1?Math.round(100*i/(n-1)):0,hasC=book.chapters.length>0,k=Math.max(0,chIndexAt(i));
+  var a=hasC?'Chapter '+(k+1)+' of '+book.chapters.length+' · '+pct+'%':pct+'% of the book';
+  var b=hasC?book.chapters[k].title:'Tap any word to jump there';
+  if(a+'|'+b===gLast)return;gLast=a+'|'+b;
+  $('g-cl').textContent=a;$('g-ct').textContent=b;
+}
+function openToc(){if(!book.chapters.length)return;tocFrom=current;show('s-toc');}
+function gGo(i){gp.seek(clamp(i,0,book.words.length-1));}
+$('g-pp').onclick=function(){gGo(prevPar(gp.idx));};
+$('g-np').onclick=function(){gGo(nextPar(gp.idx));};
+$('g-pc').onclick=function(){gGo(prevChapterPos(gp.idx));};
+$('g-nc').onclick=function(){gGo(nextChapterPos(gp.idx));};
+$('g-ch').onclick=openToc;
+$('g-toc').onclick=openToc;
+enter['s-guided']=function(){
+  var hasC=book.chapters.length>0;
+  $('g-pc').style.display=$('g-nc').style.display=$('g-toc').style.display=hasC?'':'none';
+  $('g-toc').style.visibility=hasC?'visible':'hidden';$('g-toc').style.display='';
+  gLast='';gp.load(book.pos);setPlayIcon('g','pause');
+};
 leave['s-guided']=function(){gp.pause();renderBook();};
+
+/* ---------- chapters screen ---------- */
+function renderToc(){
+  var C=book.chapters,k=chIndexAt(book.pos),h='';
+  C.forEach(function(c,j){
+    var w=chEnd(j)-c.start;
+    h+='<button class="tocrow'+(j===k?' cur':j<k?' done':'')+'" data-i="'+j+'"'+(j===k?' aria-current="true"':'')+'><span class="tn">'+(j+1)+'</span><span class="tt">'+esc(c.title)+'</span><span class="tw">~'+Math.max(1,Math.round(w/250))+' min</span></button>';
+  });
+  $('toc-list').innerHTML=h;
+  $('toc-sub').textContent=C.length+' chapters · tap one to start there';
+}
+$('toc-list').onclick=function(e){
+  var b=e.target.closest('.tocrow');if(!b)return;
+  setPos(book.chapters[+b.dataset.i].start);
+  show(tocFrom==='s-guided'?'s-guided':'s-read');
+};
+$('toc-back').onclick=function(){show(tocFrom);};
+enter['s-toc']=function(){renderToc();var c=document.querySelector('#toc-list .cur');if(c)c.scrollIntoView({block:'center'});};
+
+/* ---------- read tab controls ---------- */
+$('bk-pp').onclick=function(){setPos(prevPar(book.pos));renderBook();};
+$('bk-np').onclick=function(){setPos(nextPar(book.pos));renderBook();};
+$('bk-pc').onclick=function(){setPos(prevChapterPos(book.pos));renderBook();};
+$('bk-nc').onclick=function(){setPos(nextChapterPos(book.pos));renderBook();};
+$('bk-seek').oninput=function(){
+  var n=book.words.length;
+  setPos(parStart(Math.round(this.value/1000*Math.max(0,n-1))));
+  renderBook(true);
+};
+$('bk-chs').onclick=function(){tocFrom='s-read';show('s-toc');};
 
 /* ---------- column drill ---------- */
 var cst={wpm:300,chunk:3},lines=[];
@@ -818,52 +997,134 @@ function readZip(buf){
     return dec.decode(e.method===0?raw:await inflateRaw(raw));
   }};
 }
+function resolvePath(dir,href){return decodeURIComponent(new URL(href.split('#')[0],'http://x/'+dir).pathname.slice(1));}
+function dirOf(path){return path.indexOf('/')>=0?path.replace(/[^/]*$/,''):'';}
+function cleanT(t){return t.replace(/\s+/g,' ').trim();}
+function kid(el,name){for(var c=el.firstElementChild;c;c=c.nextElementSibling){if(c.localName===name)return c;}return null;}
 async function parseEpub(buf){
   var zip=readZip(buf),P=new DOMParser();
   var cont=await zip.get('META-INF/container.xml');
   if(!cont)throw new Error('This EPUB has no container file.');
   var opfPath=P.parseFromString(cont,'text/xml').querySelector('rootfile').getAttribute('full-path');
   var opf=P.parseFromString(await zip.get(opfPath),'text/xml');
-  var dir=opfPath.indexOf('/')>=0?opfPath.replace(/[^/]*$/,''):'';
+  var dir=dirOf(opfPath);
   var manifest={};
-  opf.querySelectorAll('manifest > item').forEach(function(it){manifest[it.getAttribute('id')]={href:it.getAttribute('href'),type:it.getAttribute('media-type')||''};});
+  opf.querySelectorAll('manifest > item').forEach(function(it){manifest[it.getAttribute('id')]={href:it.getAttribute('href'),type:it.getAttribute('media-type')||'',props:it.getAttribute('properties')||''};});
   var tEl=opf.getElementsByTagName('dc:title')[0];
-  var title=tEl?tEl.textContent.trim():'';
-  var parts=[],refs=opf.querySelectorAll('spine > itemref');
+  var title=tEl?cleanT(tEl.textContent):'';
+
+  /* table of contents: file path -> chapter title (EPUB 3 nav, else EPUB 2 ncx) */
+  var toc={},tocPath='',navItem=null,ncxItem=null;
+  Object.keys(manifest).forEach(function(id){
+    var m=manifest[id];
+    if(/(^|\s)nav(\s|$)/.test(m.props))navItem=m;
+    if(m.type==='application/x-dtbncx+xml')ncxItem=m;
+  });
+  try{
+    if(navItem){
+      tocPath=resolvePath(dir,navItem.href);
+      var nd=P.parseFromString(await zip.get(tocPath),'text/html'),navs=nd.querySelectorAll('nav'),nv=null;
+      navs.forEach(function(x){if(!nv&&/toc/.test(x.getAttribute('epub:type')||''))nv=x;});
+      if(!nv)nv=navs[0];
+      var nDir=dirOf(tocPath);
+      if(nv)nv.querySelectorAll('a[href]').forEach(function(a){
+        var h=a.getAttribute('href');if(!h||/^[a-z][a-z0-9+.-]*:/i.test(h))return;
+        var q=resolvePath(nDir,h),t=cleanT(a.textContent);if(t&&!toc[q])toc[q]=t;
+      });
+    }
+    if(!Object.keys(toc).length&&ncxItem){
+      var cp=resolvePath(dir,ncxItem.href),cDir=dirOf(cp);
+      var cd=P.parseFromString(await zip.get(cp),'text/xml');
+      cd.querySelectorAll('navPoint').forEach(function(pt){
+        var lab=kid(pt,'navLabel'),ct=kid(pt,'content');if(!lab||!ct)return;
+        var tx=kid(lab,'text'),t=cleanT((tx||lab).textContent),src=ct.getAttribute('src');
+        if(!t||!src)return;
+        var q=resolvePath(cDir,src);if(!toc[q])toc[q]=t;
+      });
+    }
+  }catch(e){toc={};}
+
+  /* the book text, one entry per file in reading order */
+  var items=[],refs=opf.querySelectorAll('spine > itemref');
   for(var i=0;i<refs.length;i++){
     var m=manifest[refs[i].getAttribute('idref')];
     if(!m||!/html/.test(m.type))continue;
-    var path=decodeURIComponent(new URL(m.href,'http://x/'+dir).pathname.slice(1));
+    var path=resolvePath(dir,m.href);
+    if(path===tocPath)continue;
     var html=await zip.get(path);if(!html)continue;
-    var doc=P.parseFromString(html,'text/html');
-    var blocks=doc.body?doc.body.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li'):[];
-    var texts=[];
-    blocks.forEach(function(b){var t=b.textContent.replace(/\s+/g,' ').trim();if(t)texts.push(t);});
-    if(!texts.length&&doc.body){var t2=doc.body.textContent.replace(/\s+/g,' ').trim();if(t2)texts.push(t2);}
-    if(texts.length)parts.push(texts.join('\n\n'));
+    var doc=P.parseFromString(html,'text/html'),blocks=[];
+    if(doc.body){
+      doc.body.querySelectorAll('script,style').forEach(function(x){x.remove();});
+      doc.body.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li').forEach(function(b){
+        if(b.tagName==='LI'&&b.querySelector('p,li'))return;
+        var t=cleanT(b.textContent);
+        if(t)blocks.push({t:t,h:/^H[1-3]$/.test(b.tagName)?+b.tagName.charAt(1):0});
+      });
+      if(!blocks.length){var t2=cleanT(doc.body.textContent);if(t2)blocks.push({t:t2,h:0});}
+    }
+    if(!blocks.length)continue;
+    var head='';
+    for(var k=0;k<blocks.length;k++){if(blocks[k].h&&blocks[k].t.length<=90){head=blocks[k].t;break;}}
+    var text=blocks.map(function(b){return b.t;}).join('\n\n');
+    items.push({path:path,blocks:blocks,text:text,words:nWords(text),head:head});
   }
-  return {title:title,text:parts.join('\n\n')};
+
+  /* chapters: files named in the table of contents start a chapter, the rest continue it */
+  var hasToc=items.filter(function(it){return toc[it.path];}).length>=2;
+  var chapters=[],pending=[];
+  function flushPending(){
+    if(pending.length&&nWords(pending.join(' '))>=40)chapters.push({title:'Beginning',text:pending.join('\n\n')});
+    pending=[];
+  }
+  items.forEach(function(it){
+    var starts=hasToc?!!toc[it.path]:it.words>=80;
+    if(starts){
+      if(!chapters.length)flushPending();
+      chapters.push({title:(toc[it.path]||it.head||'Section '+(chapters.length+1)).slice(0,90),text:it.text});
+    }else if(chapters.length)chapters[chapters.length-1].text+='\n\n'+it.text;
+    else pending.push(it.text);
+  });
+  if(!chapters.length)flushPending();
+  /* one big file with headings inside: split on those instead */
+  if(chapters.length<2){
+    var hc=[],cur=null,pre=[];
+    items.forEach(function(it){it.blocks.forEach(function(b){
+      if(b.h&&b.h<=2&&b.t.length<=90){cur={title:b.t,parts:[b.t]};hc.push(cur);}
+      else if(cur)cur.parts.push(b.t);else pre.push(b.t);
+    });});
+    if(hc.length>=2){
+      chapters=[];
+      if(nWords(pre.join(' '))>=40)chapters.push({title:'Beginning',text:pre.join('\n\n')});
+      hc.forEach(function(c){chapters.push({title:c.title,text:c.parts.join('\n\n')});});
+    }
+  }
+  return {title:title,chapters:chapters.length>1?chapters:[],text:items.map(function(it){return it.text;}).join('\n\n')};
+}
+function afterLoad(title,ok){
+  var hasC=book.chapters.length>0;
+  msg('Loaded "'+title+'".'+(hasC?' Pick where to start.':' Pick a mode above.')+(ok?'':' It is too big to keep after you close the app.'));
+  if(hasC){tocFrom='s-read';show('s-toc');}else $('s-read').scrollTop=0;
 }
 $('file').addEventListener('change',async function(e){
   var f=e.target.files[0];if(!f)return;
   msg('Loading '+f.name+'...');
   try{
-    var title=f.name.replace(/\.[^.]+$/,''),text;
-    if(/\.epub$/i.test(f.name)){var r=await parseEpub(await f.arrayBuffer());title=r.title||title;text=r.text;}
+    var title=f.name.replace(/\.[^.]+$/,''),text,chs=null;
+    if(/\.epub$/i.test(f.name)){var r=await parseEpub(await f.arrayBuffer());title=r.title||title;text=r.text;chs=r.chapters;}
     else if(/\.pdf$/i.test(f.name)){throw new Error('PDF import is not in this test. Try an EPUB or a .txt file.');}
     else text=await f.text();
-    if(text.split(/\s+/).filter(Boolean).length<20)throw new Error('Not enough readable text found in that file.');
-    setBook(title,text);
-    msg('Loaded "'+title+'". Pick a mode below.');
+    if(nWords(text)<20)throw new Error('Not enough readable text found in that file.');
+    if(!chs||!chs.length)chs=splitTextChapters(text);
+    afterLoad(title,setBook(title,text,chs,true));
   }catch(err){msg(err.message||'Could not read that file.');}
   e.target.value='';
 });
 $('paste-use').onclick=function(){
   var t=$('paste').value.trim();
-  if(t.split(/\s+/).filter(Boolean).length<20){msg('Paste at least 20 words.');return;}
-  setBook('Pasted text',t);msg('Loaded pasted text. Pick a mode below.');
+  if(nWords(t)<20){msg('Paste at least 20 words.');return;}
+  afterLoad('Pasted text',setBook('Pasted text',t,splitTextChapters(t),true));
 };
-$('bk-restart').onclick=function(){setPos(0);renderBook();msg('Back at the start.');};
+$('bk-restart').onclick=function(){setPos(0);renderBook();$('s-read').scrollTop=0;};
 enter['s-read']=function(){renderBook();};
 
 /* ===================== EXERCISE CONTENT (original text, EN + ES) ===================== */
@@ -1722,7 +1983,11 @@ $('pl-body').onclick=function(e){
 var testPending=false;
 
 renderHub();renderPath();renderPlan();
-setBook('Pride and Prejudice (sample)',SAMPLE);
+(function(){
+  var sv=store.get('book:last',null);
+  if(sv&&sv.t&&(sv.c||sv.x))setBook(sv.t,sv.x||'',sv.c?sv.c.map(function(c){return {title:c[0],text:c[1]};}):null,false);
+  else setBook('Pride and Prejudice (sample)',SAMPLE,null,false);
+})();
 hubPill();
 })();
 </script>
