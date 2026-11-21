@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="2026-11-20.3">
+<meta name="build" content="2026-11-20.4">
 <title>Speed Reader Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1178,6 +1178,7 @@ function renderHub(){
   });
   var APP=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.speedrr),bm=document.querySelector('meta[name=build]');
   if(APP)h+='<div class="pfoot" style="flex-direction:column;align-items:center;gap:8px"><button class="btn" id="chk-up">'+(LANG==='en'?'Check for updates':'Buscar actualizaciones')+'</button><span class="sub">Build '+(bm?bm.content:'')+'</span></div>';
+  else h+='<div class="pfoot"><span class="sub">Build '+(bm?bm.content:'')+'</span></div>';
   $('hub-list').innerHTML=h;
   $('lang-en').setAttribute('aria-pressed',String(LANG==='en'));
   $('lang-es').setAttribute('aria-pressed',String(LANG==='es'));
