@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="2026-11-20.6">
+<meta name="build" content="2026-11-20.7">
 <title>Speed Reader Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -179,6 +179,8 @@ nav#tabs{height:64px;flex:none;border-top:1px solid var(--line);display:flex;bac
 .gnav .gc{flex:1;min-width:0;height:44px;border:none;background:transparent;border-radius:12px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 4px}
 .gnav .gc small{font-size:11px;color:var(--muted);white-space:nowrap}
 .gnav .gc b{font-size:13px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#s-flow .gnav .gb{border-color:#5A544A}
+#s-flow .gnav .gc small{color:var(--nmuted)}
 #g-text .w{cursor:pointer}
 #g-text .w.hd{font-weight:700}
 .gnote{display:none;margin-top:8px;padding:10px 14px;border-radius:14px;background:var(--tint);font-size:14px;font-weight:600;text-align:center}
@@ -324,7 +326,14 @@ mark{background:var(--tint);padding:0 3px;border-radius:4px}
 
 <!-- WORD FLOW -->
 <section id="s-flow" class="screen night" aria-label="Word flow">
-  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Word flow</b><span id="rs-title"></span></div><div class="sp"></div></header>
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Word flow</b><span id="rs-title"></span></div><button class="back" id="r-toc" aria-label="Chapters"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button></header>
+  <div class="gnav">
+    <button class="gb gch" id="r-pc" aria-label="Previous chapter" title="Previous chapter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></svg></button>
+    <button class="gb" id="r-pp" aria-label="Previous paragraph" title="Previous paragraph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="gc" id="r-ch" aria-label="Chapters"><small id="r-cl"></small><b id="r-ct"></b></button>
+    <button class="gb" id="r-np" aria-label="Next paragraph" title="Next paragraph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    <button class="gb gch" id="r-nc" aria-label="Next chapter" title="Next chapter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6l6 6-6 6M13 6l6 6-6 6"/></svg></button>
+  </div>
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0">
     <div class="rsvp" aria-live="off"><div class="tk t1"></div><div class="tk t2"></div><div class="word" id="rs-word"><span class="b" id="rs-b"></span><span class="p" id="rs-p"></span><span class="a" id="rs-a"></span></div></div>
     <div class="ctx" id="rs-ctx"></div>
@@ -336,7 +345,14 @@ mark{background:var(--tint);padding:0 3px;border-radius:4px}
 
 <!-- COLUMN DRILL -->
 <section id="s-col" class="screen" aria-label="Column drill">
-  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Column drill</b><span id="c-title"></span></div><div class="sp"></div></header>
+  <header class="bar"><button class="back" data-go="s-hub" aria-label="Back to drills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>Column drill</b><span id="c-title"></span></div><button class="back" id="c-toc" aria-label="Chapters"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button></header>
+  <div class="gnav">
+    <button class="gb gch" id="c-pc" aria-label="Previous chapter" title="Previous chapter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></svg></button>
+    <button class="gb" id="c-pp" aria-label="Previous paragraph" title="Previous paragraph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="gc" id="c-ch" aria-label="Chapters"><small id="c-cl"></small><b id="c-ct"></b></button>
+    <button class="gb" id="c-np" aria-label="Next paragraph" title="Next paragraph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    <button class="gb gch" id="c-nc" aria-label="Next chapter" title="Next chapter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6l6 6-6 6M13 6l6 6-6 6"/></svg></button>
+  </div>
   <div class="colbox"><div id="c-text"></div></div>
   <p class="hint" style="margin-top:8px">Aim your eyes at the red line. Take in each whole line with one stop.</p>
   <div id="c-ctl"></div>
@@ -837,14 +853,21 @@ var gp=Pacer({
   onState:function(s){setPlayIcon('g',s);if(s==='play')$('g-note').style.display='none';}
 });
 wire('g',gp,gst,6);
-var gLast='';
-function gnavUpdate(i){
+var navLast={};
+function navUpd(pre,i,hint){
   var n=book.words.length,pct=n>1?Math.round(100*i/(n-1)):0,hasC=book.chapters.length>0,k=Math.max(0,chIndexAt(i));
   var a=hasC?'Chapter '+(k+1)+' of '+book.chapters.length+' · '+pct+'%':pct+'% of the book';
-  var b=hasC?book.chapters[k].title:'Tap any word to jump there';
-  if(a+'|'+b===gLast)return;gLast=a+'|'+b;
-  $('g-cl').textContent=a;$('g-ct').textContent=b;
+  var b=hasC?book.chapters[k].title:hint;
+  if(a+'|'+b===navLast[pre])return;navLast[pre]=a+'|'+b;
+  $(pre+'-cl').textContent=a;$(pre+'-ct').textContent=b;
 }
+function navShow(pre){
+  var hasC=book.chapters.length>0;
+  $(pre+'-pc').style.display=$(pre+'-nc').style.display=hasC?'':'none';
+  $(pre+'-toc').style.visibility=hasC?'visible':'hidden';
+  navLast[pre]='';
+}
+function gnavUpdate(i){navUpd('g',i,'Tap any word to jump there');}
 function openToc(){if(!book.chapters.length)return;tocFrom=current;show('s-toc');}
 function gGo(i){gp.seek(clamp(i,0,book.words.length-1));}
 $('g-pp').onclick=function(){gGo(prevPar(gp.idx));};
@@ -854,10 +877,7 @@ $('g-nc').onclick=function(){gGo(nextChapterPos(gp.idx));};
 $('g-ch').onclick=openToc;
 $('g-toc').onclick=openToc;
 enter['s-guided']=function(){
-  var hasC=book.chapters.length>0;
-  $('g-pc').style.display=$('g-nc').style.display=$('g-toc').style.display=hasC?'':'none';
-  $('g-toc').style.visibility=hasC?'visible':'hidden';$('g-toc').style.display='';
-  gLast='';gp.load(book.pos);setPlayIcon('g','pause');
+  navShow('g');gp.load(book.pos);setPlayIcon('g','pause');
 };
 leave['s-guided']=function(){gp.pause();renderBook();};
 
@@ -874,7 +894,7 @@ function renderToc(){
 $('toc-list').onclick=function(e){
   var b=e.target.closest('.tocrow');if(!b)return;
   setPos(book.chapters[+b.dataset.i].start);
-  show(tocFrom==='s-guided'?'s-guided':'s-read');
+  show(/^s-(guided|flow|col)$/.test(tocFrom)?tocFrom:'s-read');
 };
 $('toc-back').onclick=function(){show(tocFrom);};
 enter['s-toc']=function(){renderToc();var c=document.querySelector('#toc-list .cur');if(c)c.scrollIntoView({block:'center'});};
@@ -890,6 +910,9 @@ $('bk-seek').oninput=function(){
   renderBook(true);
 };
 $('bk-chs').onclick=function(){tocFrom='s-read';show('s-toc');};
+document.querySelectorAll('#s-read [data-go="s-flow"],#s-read [data-go="s-col"]').forEach(function(b){
+  b.addEventListener('click',function(){var bk=document.querySelector('#'+b.dataset.go+' .back');if(bk)bk.dataset.go='s-read';pendingOld=null;});
+});
 
 /* ---------- column drill ---------- */
 var cst={wpm:300,chunk:3},lines=[];
@@ -901,12 +924,19 @@ $('c-ctl').innerHTML=controlsHTML('c',{label:'Words per line',values:[2,3,4]});
 var cp=Pacer({
   el:$('c-text'),pageSize:10,paragraphs:false,
   units:function(){return lines;},chunk:function(){return 1;},wpm:function(){return cst.wpm/cst.chunk;},
-  onIndex:function(i){setPos(Math.min(book.words.length-1,i*cst.chunk));},
+  onIndex:function(i){var w=Math.min(book.words.length-1,i*cst.chunk);setPos(w);navUpd('c',w,'Column drill');},
   onState:function(s){setPlayIcon('c',s);}
 });
 wire('c',cp,cst,4,function(){var w=book.pos;buildLines();cp.load(Math.floor(w/cst.chunk));});
-enter['s-col']=function(){buildLines();cp.load(Math.floor(book.pos/cst.chunk));setPlayIcon('c','pause');};
+enter['s-col']=function(){navShow('c');buildLines();cp.load(Math.floor(book.pos/cst.chunk));setPlayIcon('c','pause');};
 leave['s-col']=function(){cp.pause();renderBook();};
+function cGo(i){cp.seek(Math.floor(clamp(i,0,book.words.length-1)/cst.chunk));}
+function cWord(){return Math.min(book.words.length-1,cp.idx*cst.chunk);}
+$('c-pp').onclick=function(){cGo(prevPar(cWord()));};
+$('c-np').onclick=function(){cGo(nextPar(cWord()));};
+$('c-pc').onclick=function(){cGo(prevChapterPos(cWord()));};
+$('c-nc').onclick=function(){cGo(nextChapterPos(cWord()));};
+$('c-ch').onclick=openToc;$('c-toc').onclick=openToc;
 
 /* ---------- word flow (one word at a time) ---------- */
 var rs={i:0,playing:false,wpm:400,ramp:false,timer:0,count:0};
@@ -926,7 +956,7 @@ function rsRender(){
   ctx.appendChild(document.createTextNode(' '+next));
   var pct=W.length>1?Math.round(100*rs.i/(W.length-1)):0;
   $('rs-bar').style.width=pct+'%';$('rs-pct').textContent=pct+'% of book';
-  setPos(rs.i);
+  setPos(rs.i);navUpd('r',rs.i,'Word flow');
 }
 function rsSchedule(){
   clearTimeout(rs.timer);if(!rs.playing)return;
@@ -953,7 +983,13 @@ $('r-back').onclick=function(){rs.i=Math.max(0,rs.i-10);rsRender();rsSchedule();
 $('r-fwd').onclick=function(){rs.i=Math.min(book.words.length-1,rs.i+10);rsRender();rsSchedule();};
 $('r-chunks').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;rs.ramp=b.dataset.v==='1';$('r-chunks').querySelectorAll('.chip').forEach(function(c){c.setAttribute('aria-pressed',String(c===b));});};
 $('r-chunks').querySelectorAll('.chip')[0].setAttribute('aria-pressed','true');
-enter['s-flow']=function(){rs.i=book.pos;rs.count=0;$('r-wpm').textContent=rs.wpm;setPlayIcon('r','pause');rsRender();};
+function rGo(i){rs.i=clamp(i,0,book.words.length-1);rsRender();rsSchedule();}
+$('r-pp').onclick=function(){rGo(prevPar(rs.i));};
+$('r-np').onclick=function(){rGo(nextPar(rs.i));};
+$('r-pc').onclick=function(){rGo(prevChapterPos(rs.i));};
+$('r-nc').onclick=function(){rGo(nextChapterPos(rs.i));};
+$('r-ch').onclick=openToc;$('r-toc').onclick=openToc;
+enter['s-flow']=function(){navShow('r');rs.i=book.pos;rs.count=0;$('r-wpm').textContent=rs.wpm;setPlayIcon('r','pause');rsRender();};
 leave['s-flow']=function(){rsPause();renderBook();};
 
 /* ---------- speed test ---------- */
